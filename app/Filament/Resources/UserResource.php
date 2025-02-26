@@ -18,7 +18,7 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-users';
 
     public static function form(Form $form): Form
     {
@@ -31,7 +31,7 @@ class UserResource extends Resource
                 TextInput::make('email')
                     ->email()
                     ->autocomplete(false)
-                    
+
                     ->required()
                     ->label('Email'),
                 Select::make('role')
@@ -65,7 +65,20 @@ class UserResource extends Resource
                 TextColumn::make('email')
                     ->label('Email'),
                 TextColumn::make('role')
-                    ->label('Role'),
+                    ->label('Role')
+                    ->formatStateUsing(function (?string $state): string {
+                        if ($state === null) {
+                            return '-';
+                        }
+                        return match ($state) {
+                            'admin' => 'Admin',
+                            'player_manager' => 'Player Manager',
+                            'competition_manager' => 'Competition Manager',
+                            'finance_manager' => 'Finance Manager',
+                            'reporting_manager' => 'Reporting Manager',
+                            default => $state,
+                        };
+                    })
             ])
             ->filters([
                 //
