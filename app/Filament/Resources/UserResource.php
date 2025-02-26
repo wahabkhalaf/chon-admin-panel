@@ -10,8 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\TextColumn;
 
@@ -25,11 +24,35 @@ class UserResource extends Resource
     {
         return $form
             ->schema([
-                //
-                TextInput::make('role')
+                TextInput::make('name')
                     ->required()
-                    ->default('user')
+                    ->autofocus()
+                    ->label('Name'),
+                TextInput::make('email')
+                    ->email()
+                    ->autocomplete(false)
+                    
+                    ->required()
+                    ->label('Email'),
+                Select::make('role')
+                    ->options([
+                        'admin' => 'Admin', // For secure login and high-level privileges
+                        'player_manager' => 'Player Manager', // To manage user/player data
+                        'competition_manager' => 'Competition Manager', // For competition & session management
+                        'finance_manager' => 'Finance Manager', // For prize & transaction management
+                        'reporting_manager' => 'Reporting Manager', // For reporting, analytics & notifications
+                    ])
+                    ->default('admin')
+                    ->required()
                     ->label('Role'),
+                TextInput::make('password')
+                    ->password()
+                    ->autocomplete(false)
+                    ->label('Password')
+                    ->dehydrateStateUsing(fn($state) => !empty($state) ? bcrypt($state) : null)
+                    ->dehydrated(fn($state) => filled($state))
+                    ->hint('Leave blank if not changing')
+                    ->maxLength(255),
             ]);
     }
 
@@ -37,7 +60,10 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                //
+                TextColumn::make('name')
+                    ->label('Name'),
+                TextColumn::make('email')
+                    ->label('Email'),
                 TextColumn::make('role')
                     ->label('Role'),
             ])
