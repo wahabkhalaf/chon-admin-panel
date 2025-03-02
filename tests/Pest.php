@@ -1,15 +1,5 @@
 <?php
 
-// Remove early DB configuration call 
-// config([
-// 	'database.default' => 'sqlite',
-// 	'database.connections.sqlite' => [
-// 		'driver'   => 'sqlite',
-// 		'database' => ':memory:',
-// 		'prefix'   => '',
-// 	],
-// ]);
-
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -22,12 +12,12 @@
 */
 
 pest()->extend(Tests\TestCase::class)
- // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature');
 
-// Add global beforeEach to disable Filament auth during tests.
+// Configure Filament auth right before test execution
 beforeEach(function () {
-    config(['filament.auth' => false]);
+    config(['filament.auth.guard' => null]);
+    config(['app.key' => 'base64:'.base64_encode(random_bytes(32))]);
 });
 
 /*
