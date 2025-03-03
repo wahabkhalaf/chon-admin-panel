@@ -11,7 +11,7 @@ use Livewire\Livewire;
 use function Pest\Livewire\livewire;
 
 beforeEach(function() {
-    $this->actingAs(User::factory()->create(['role' => 'admin']));
+    $this->actingAs(User::factory()->create(['role' => 'player_manager']));
 });
 
 it('can render post titles', function () {
