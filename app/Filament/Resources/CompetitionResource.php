@@ -160,6 +160,6 @@ class CompetitionResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('status', 'active')->count();
+        return static::getModel()::getActiveCompetitionsCount();
     }
 }
