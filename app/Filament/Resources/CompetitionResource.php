@@ -40,13 +40,13 @@ class CompetitionResource extends Resource
                             ->required()
                             ->numeric()
                             ->minValue(0)
-                            ->prefix('$')
+                            ->prefix('IQD')
                             ->disabled(fn($record) => $record && !$record->canEditField('entry_fee')),
                         Forms\Components\TextInput::make('prize_pool')
                             ->required()
                             ->numeric()
                             ->minValue(0)
-                            ->prefix('$')
+                            ->prefix('IQD')
                             ->disabled(fn($record) => $record && !$record->canEditField('prize_pool')),
                     ])->columns(2),
 
@@ -95,10 +95,10 @@ class CompetitionResource extends Resource
                     })->sortable()
                     ,
                 Tables\Columns\TextColumn::make('entry_fee')
-                    ->money()
+                    ->money('IQD')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('prize_pool')
-                    ->money()
+                    ->money('IQD')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('start_time')
                     ->dateTime()
