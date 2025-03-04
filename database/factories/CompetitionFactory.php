@@ -16,7 +16,6 @@ class CompetitionFactory extends Factory
         $endTime->modify('+' . rand(1, 48) . ' hours');
 
         return [
-            //'id' => $this->faker->uuid(),
             'name' => $this->faker->words(3, true) . ' Competition',
             'description' => $this->faker->paragraph(),
             'entry_fee' => $this->faker->randomFloat(2, 5, 100),

@@ -101,11 +101,11 @@ test('validates required fields when creating user', function () {
 test('validates email format', function () {
     livewire(UserResource\Pages\CreateUser::class)
         ->fillForm([
-            'data.name' => 'Test User',
-            'data.email' => 'invalid-email',
-            'data.role' => 'admin',
-            'data.password' => 'password123'
+            'name' => 'Test User',
+            'email' => 'invalid-email',
+            'role' => 'admin',
+            'password' => 'password123'
         ])
         ->call('create')
-        ->assertHasFormErrors(['data.email' => 'email']);
+        ->assertHasFormErrors(['email' => 'email']);
 });

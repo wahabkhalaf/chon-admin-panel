@@ -23,8 +23,7 @@ class Competition extends Model
 {
     use HasFactory;
 
-    protected $keyType = 'string';
-    public $incrementing = false;
+    // Competition uses auto-incrementing integer IDs
 
     protected $fillable = [
         'name',
