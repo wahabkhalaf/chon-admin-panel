@@ -146,23 +146,21 @@ test('validates negative values', function () {
     $endTime = now()->addDays(2)->startOfHour();
     
     $invalidCompetition = [
-        'data' => [
-            'name' => 'Test Competition',
-            'description' => 'Test Description',
-            'entry_fee' => '-50.00',
-            'prize_pool' => '-1000.00',
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-            'max_users' => 100,
-            'status' => 'upcoming'
-        ]
+        'name' => 'Test Competition',
+        'description' => 'Test Description',
+        'entry_fee' => '-50.00',
+        'prize_pool' => '-1000.00',
+        'start_time' => $startTime,
+        'end_time' => $endTime,
+        'max_users' => 100,
+        'status' => 'upcoming'
     ];
 
     Livewire::actingAs($this->user)
         ->test(CompetitionResource\Pages\CreateCompetition::class)
         ->fillForm($invalidCompetition)
         ->call('create')
-        ->assertHasNoFormErrors(); // Negative values are auto-corrected
+        ->assertHasNoFormErrors(); // Negative values are auto-corrected to 0
 
     $this->assertDatabaseHas('competitions', [
         'name' => 'Test Competition',
