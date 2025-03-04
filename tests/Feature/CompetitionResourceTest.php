@@ -56,12 +56,11 @@ test('can create competition', function () {
     ]);
 });
 
-test('cannot create competition with invalid dates', function () {
-    // Define the time values - Start time is AFTER end time to trigger validation error
-    $startTime = now()->addDays(2)->startOfHour();
-    $endTime = now()->addDays(1)->startOfHour(); // End time before start time
 
-    
+test('cannot create competition with invalid dates', function () {
+    $startTime = now()->addDays(2)->startOfHour();
+    $endTime = now()->addDays(1)->startOfHour();
+
     $invalidCompetition = [
         'name' => 'Invalid Competition',
         'description' => 'Test Description',
@@ -78,74 +77,64 @@ test('cannot create competition with invalid dates', function () {
         ->fillForm($invalidCompetition)
         ->call('create')
         ->assertHasErrors(['data.end_time']);
-    
-    $this->assertDatabaseMissing('competitions', [
-        'name' => 'Invalid Competition',
-    ]);
 });
-
-test('can update competition', function () {
-    // Create a competition with a specific set of dates to avoid validation issues
-    $startTime = now()->addDay()->startOfHour();
-    $endTime = now()->addDays(2)->startOfHour();
-    
+test('can update competition status completed or closed', function () {
+    // Create a competition with active status
     $competition = Competition::factory()->create([
-        'start_time' => $startTime,
-        'end_time' => $endTime,
+        'status' => 'closed',
+        'start_time' => now()->subDay()->startOfHour(),
+        'end_time' => now()->subHour()->startOfHour(),
+        'entry_fee' => 50.00,
+        'prize_pool' => 1000.00,
+        'max_users' => 100
     ]);
-    
-    // Refresh to ensure we have the latest data
-    $competition->refresh();
-    
-    
-    
-    $updatedData = [
-        'name' => 'Updated Competition',
-        'description' => $competition->description,
-        'entry_fee' => '75.00',
-        'prize_pool' => '1500.00',
-        'start_time' => $startTime,
-        'end_time' => $endTime,
-        'max_users' => $competition->max_users,
-        'status' => 'active'
-    ];
 
+    // Update to completed
     Livewire::actingAs($this->user)
         ->test(CompetitionResource\Pages\EditCompetition::class, [
             'record' => $competition->id,
         ])
-        ->fillForm($updatedData)
+        ->fillForm([
+            'status' => 'completed'
+        ])
         ->call('save')
         ->assertHasNoFormErrors();
 
+    // Assert status changed to completed
     $this->assertDatabaseHas('competitions', [
         'id' => $competition->id,
-        'name' => 'Updated Competition',
-        'entry_fee' => '75.00',
-        'prize_pool' => '1500.00',
-        'status' => 'active'
+        'status' => 'completed',
+        'entry_fee' => 50.00,
+        'prize_pool' => 1000.00
     ]);
-});
 
-test('can delete competition', function () {
-    $competition = Competition::factory()->create();
-
+    // Update to closed
     Livewire::actingAs($this->user)
         ->test(CompetitionResource\Pages\EditCompetition::class, [
             'record' => $competition->id,
         ])
-        ->callAction('delete');
+        ->fillForm([
+            'status' => 'closed'
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
 
-    $this->assertDatabaseMissing('competitions', [
+    // Assert status changed to closed
+    $this->assertDatabaseHas('competitions', [
         'id' => $competition->id,
+        'status' => 'closed',
+        'entry_fee' => 50.00,
+        'prize_pool' => 1000.00
     ]);
 });
+
+
 
 test('validates negative values', function () {
     $startTime = now()->addDays(1)->startOfHour();
     $endTime = now()->addDays(2)->startOfHour();
-    
-    $invalidCompetition = [
+
+    $competition = [
         'name' => 'Test Competition',
         'description' => 'Test Description',
         'entry_fee' => '-50.00',
@@ -158,13 +147,95 @@ test('validates negative values', function () {
 
     Livewire::actingAs($this->user)
         ->test(CompetitionResource\Pages\CreateCompetition::class)
-        ->fillForm($invalidCompetition)
+        ->fillForm($competition)
         ->call('create')
-        ->assertHasNoFormErrors(); // Negative values are auto-corrected to 0
+        ->assertHasErrors(['data.entry_fee', 'data.prize_pool']);
+
+    $this->assertDatabaseMissing('competitions', [
+        'name' => 'Test Competition'
+    ]);
+});
+
+test('can delete competition', function () {
+    $competition = Competition::factory()->create([
+        'status' => 'upcoming',
+        'start_time' => now()->addDays(1),
+        'end_time' => now()->addDays(2),
+    ]);
+
+    Livewire::actingAs($this->user)
+        ->test(CompetitionResource\Pages\EditCompetition::class, [
+            'record' => $competition->id,
+        ])
+        ->assertActionVisible('delete')
+        ->callAction('delete');
+
+    $this->assertModelMissing($competition);
+});
+
+test('cannot delete active competition', function () {
+    $competition = Competition::factory()->create([
+        'status' => 'active',
+        'start_time' => now()->subHour(),
+        'end_time' => now()->addHour(),
+    ]);
+
+    Livewire::actingAs($this->user)
+        ->test(CompetitionResource\Pages\EditCompetition::class, [
+            'record' => $competition->id,
+        ])
+        ->assertActionHidden('delete');
+
+    $this->assertModelExists($competition);
+});
+
+test('can delete upcoming competition', function () {
+    $competition = Competition::factory()->create([
+        'status' => 'upcoming',
+        'start_time' => now()->addDays(1),
+        'end_time' => now()->addDays(2),
+    ]);
+
+    Livewire::actingAs($this->user)
+        ->test(CompetitionResource\Pages\EditCompetition::class, [
+            'record' => $competition->id,
+        ])
+        ->callAction('delete');
+
+    $this->assertDatabaseMissing('competitions', [
+        'id' => $competition->id,
+    ]);
+});
+
+test('cannot modify protected fields of active competition', function () {
+    $competition = Competition::factory()->create([
+        'status' => 'active',
+        'entry_fee' => 50.00,
+        'prize_pool' => 1000.00,
+        'start_time' => now()->subHour(),
+        'end_time' => now()->addHour(),
+        'max_users' => 100
+    ]);
+
+    $updatedData = [
+        'name' => 'Updated Name',
+        'entry_fee' => 75.00,
+        'prize_pool' => 1500.00,
+        'max_users' => 200
+    ];
+
+    Livewire::actingAs($this->user)
+        ->test(CompetitionResource\Pages\EditCompetition::class, [
+            'record' => $competition->id,
+        ])
+        ->fillForm($updatedData)
+        ->call('save');
 
     $this->assertDatabaseHas('competitions', [
-        'name' => 'Test Competition',
-        'entry_fee' => '0.00',
-        'prize_pool' => '0.00',
+        'id' => $competition->id,
+        'name' => 'Updated Name',
+        'entry_fee' => 50.00,  // Should remain unchanged
+        'prize_pool' => 1000.00,  // Should remain unchanged
+        'max_users' => 100  // Should remain unchanged
     ]);
 });

@@ -41,47 +41,23 @@ class CompetitionResource extends Resource
                             ->numeric()
                             ->minValue(0)
                             ->prefix('$')
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function ($state, Forms\Set $set) {
-                                if ($state < 0) {
-                                    $set('entry_fee', 0);
-                                }
-                            }),
+                            ->disabled(fn($record) => $record && !$record->canEditField('entry_fee')),
                         Forms\Components\TextInput::make('prize_pool')
                             ->required()
                             ->numeric()
                             ->minValue(0)
                             ->prefix('$')
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function ($state, Forms\Set $set) {
-                                if ($state < 0) {
-                                    $set('prize_pool', 0);
-                                }
-                            }),
+                            ->disabled(fn($record) => $record && !$record->canEditField('prize_pool')),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Time & Capacity')
                     ->schema([
                         Forms\Components\DateTimePicker::make('start_time')
-                            ->required()
-                            ->live()
-                            ->minDate(now())
-                            ->afterStateUpdated(function ($state, Forms\Set $set, $get) {
-                                if ($state && $get('end_time') && Carbon::parse($state)->gte($get('end_time'))) {
-                                    $set('end_time', Carbon::parse($state)->addHours(1));
-                                }
-                            }),
+                            ->disabled(fn($record) => $record && !$record->canEditField('start_time')),
                         Forms\Components\DateTimePicker::make('end_time')
-                            ->required()
-                            ->live()
-                            ->minDate(now())
-                            ->after('start_time'),
+                            ->disabled(fn($record) => $record && !$record->canEditField('end_time')),
                         Forms\Components\TextInput::make('max_users')
-                            ->required()
-                            ->numeric()
-                            ->minValue(1)
-                            ->integer()
-                            ->live(onBlur: true),
+                            ->disabled(fn($record) => $record && !$record->canEditField('max_users')),
                     ])->columns(3),
 
                 Forms\Components\Section::make('Status')
@@ -107,6 +83,17 @@ class CompetitionResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\BadgeColumn::make('status')
+                    ->colors([
+                        'warning' => 'upcoming',
+                        'success' => 'active',
+                        'primary' => 'completed',
+                        'danger' => 'closed',
+                    ])
+                    ->formatStateUsing(function ($state) {
+                        return ucfirst($state);
+                    })->sortable()
+                    ,
                 Tables\Columns\TextColumn::make('entry_fee')
                     ->money()
                     ->sortable(),
@@ -122,13 +109,7 @@ class CompetitionResource extends Resource
                 Tables\Columns\TextColumn::make('max_users')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\BadgeColumn::make('status')
-                    ->colors([
-                        'warning' => 'upcoming',
-                        'success' => 'active',
-                        'primary' => 'completed',
-                        'danger' => 'closed',
-                    ]),
+               
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')

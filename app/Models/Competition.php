@@ -65,20 +65,51 @@ class Competition extends Model
     protected static function boot()
     {
         parent::boot();
+        static::saving(function ($competition) {
+            if ($competition->end_time <= $competition->start_time) {
+                throw new \InvalidArgumentException('End time must be after start time');
+            }
+            if ($competition->entry_fee < 0) {
+                $competition->entry_fee = 0;
+            }
+            if ($competition->prize_pool < 0) {
+                $competition->prize_pool = 0;
+            }
+        });
+    }
+    /**
+     * Determine if the competition can be deleted
+     */
+    public function canDelete(): bool
+    {
+        // Can only delete if competition is 'upcoming' or 'closed'
+        if ($this->status === 'active' || $this->status === 'completed') {
+            return false;
+        }
 
-        // static::saving(function ($competition) {
-        //     if ($competition->end_time <= $competition->start_time) {
-        //         throw new \InvalidArgumentException('End time must be after start time');
-        //     }
-        //     if ($competition->entry_fee < 0) {
-        //         throw new \InvalidArgumentException('Entry fee cannot be negative');
-        //     }
-        //     if ($competition->prize_pool < 0) {
-        //         throw new \InvalidArgumentException('Prize pool cannot be negative');
-        //     }
-        //     if ($competition->max_users < 1) {
-        //         throw new \InvalidArgumentException('Maximum users must be at least 1');
-        //     }
-        // });
+        // Additional check for time-based constraints
+        $now = Carbon::now();
+        
+        // Cannot delete if competition has already started
+        if ($now->gte($this->start_time)) {
+            return false;
+        }
+
+        return true;
+    }
+    public function canEditField(string $field): bool
+    {
+        if (in_array($this->status, ['active', 'completed'])) {
+            // List of protected fields when competition is active/completed
+            $protectedFields = [
+                'entry_fee',
+                'prize_pool',
+                'start_time',
+                'end_time',
+                'max_users'
+            ];
+            return !in_array($field, $protectedFields);
+        }
+        return true;
     }
 }
