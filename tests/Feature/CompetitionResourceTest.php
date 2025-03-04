@@ -1,120 +1,122 @@
 <?php
 
-namespace Tests\Feature;
-
+use App\Filament\Resources\CompetitionResource;
+use \App\Filament\Resources\CompetitionResource\Pages\CreateCompetition;
 use App\Models\Competition;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Livewire\Livewire;
 
-class CompetitionResourceTest extends TestCase
-{
-    use RefreshDatabase;
+uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
-    protected User $user;
+beforeEach(function () {
+    $this->user = User::factory()->create(['email' => 'test@example.com']);
+});
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->user = User::factory()->create(['email' => 'test@example.com']);
-    }
+test('can view competition list', function () {
+    $this->actingAs($this->user)
+        ->get('/admin/competitions')
+        ->assertSuccessful();
+});
 
-    public function testCanViewCompetitionList(): void
-    {
-        $this->actingAs($this->user)
-            ->get('/admin/competitions')
-            ->assertSuccessful();
-    }
+test('can create competition', function () {
+    $newCompetition = [
+        'name' => 'Test Competition',
+        'description' => 'Test Description',
+        'entry_fee' => 50.00,
+        'prize_pool' => 1000.00,
+        'start_time' => now()->addDays(1)->toDateTimeString(),
+        'end_time' => now()->addDays(2)->toDateTimeString(),
+        'max_users' => 100,
+        'status' => 'upcoming'
+    ];
 
-    public function testCanCreateCompetition(): void
-    {
-        $newCompetition = [
-            'name' => 'Test Competition',
-            'description' => 'Test Description',
-            'entry_fee' => 50.00,
-            'prize_pool' => 1000.00,
-            'start_time' => now()->addDays(1),
-            'end_time' => now()->addDays(2),
-            'max_users' => 100,
-            'status' => 'upcoming'
-        ];
+    Livewire::actingAs($this->user)
+        ->component(CompetitionResource\Pages\CreateCompetition::class)
+        ->fillForm($newCompetition)
+        ->call('create')
+        ->assertHasNoFormErrors();
 
-        $response = $this->actingAs($this->user)
-            ->post('/admin/competitions', [
-                'data' => $newCompetition,
-            ]);
+    $this->assertDatabaseHas('competitions', [
+        'name' => 'Test Competition',
+        'entry_fee' => 50.00,
+        'prize_pool' => 1000.00,
+    ]);
+});
 
-        $this->assertDatabaseHas('competitions', [
-            'name' => 'Test Competition',
-            'entry_fee' => 50.00,
-            'prize_pool' => 1000.00,
+test('cannot create competition with invalid dates', function () {
+    $invalidCompetition = [
+        'name' => 'Invalid Competition',
+        'description' => 'Test Description',
+        'entry_fee' => 50.00,
+        'prize_pool' => 1000.00,
+        'start_time' => now()->addDays(2),
+        'end_time' => now()->addDays(1), // End time before start time
+        'max_users' => 100,
+        'status' => 'upcoming'
+    ];
+
+    $response = $this->actingAs($this->user)
+        ->post('/admin/competitions', [
+            'data' => $invalidCompetition,
         ]);
-    }
 
-    public function testCannotCreateCompetitionWithInvalidDates(): void
-    {
-        $invalidCompetition = [
-            'name' => 'Invalid Competition',
-            'description' => 'Test Description',
-            'entry_fee' => 50.00,
-            'prize_pool' => 1000.00,
-            'start_time' => now()->addDays(2),
-            'end_time' => now()->addDays(1), // End time before start time
-            'max_users' => 100,
-            'status' => 'upcoming'
-        ];
+    $this->assertDatabaseMissing('competitions', [
+        'name' => 'Invalid Competition',
+    ]);
+});
 
-        $response = $this->actingAs($this->user)
-            ->post('/admin/competitions', [
-                'data' => $invalidCompetition,
-            ]);
+test('can update competition', function () {
+    $competition = Competition::factory()->create();
 
-        $this->assertDatabaseMissing('competitions', [
-            'name' => 'Invalid Competition',
-        ]);
-    }
-
-    public function testCanUpdateCompetition(): void
-    {
-        $competition = Competition::factory()->create();
-
-        $updatedData = [
-            'data' => [
-                'name' => 'Updated Competition',
-                'entry_fee' => 75.00,
-                'prize_pool' => 1500.00,
-                'status' => 'active'
-            ]
-        ];
-
-        $this->actingAs($this->user)
-            ->patch("/admin/competitions/{$competition->id}", $updatedData);
-
-        $this->assertDatabaseHas('competitions', [
-            'id' => $competition->id,
+    $updatedData = [
+        'data' => [
             'name' => 'Updated Competition',
             'entry_fee' => 75.00,
             'prize_pool' => 1500.00,
             'status' => 'active'
-        ]);
-    }
+        ]
+    ];
 
-    public function testCanDeleteCompetition(): void
-    {
-        $competition = Competition::factory()->create();
+    $this->actingAs($this->user)
+        ->patch("/admin/competitions/{$competition->id}", $updatedData);
 
-        $this->actingAs($this->user)
-            ->delete("/admin/competitions/{$competition->id}");
+    $this->assertDatabaseHas('competitions', [
+        'id' => $competition->id,
+        'name' => 'Updated Competition',
+        'entry_fee' => 75.00,
+        'prize_pool' => 1500.00,
+        'status' => 'active'
+    ]);
+});
 
-        $this->assertDatabaseMissing('competitions', [
-            'id' => $competition->id,
-        ]);
-    }
+test('can delete competition', function () {
+    $competition = Competition::factory()->create();
 
-    public function testValidatesNegativeValues(): void
-    {
-        $invalidCompetition = [
-            'data' => [
-                'name' => 'Test Competition',
-                'entry_fee' => -50.00, // Negative value
-                'prize_pool' => -1000.00, // Negative value
+    $this->actingAs($this->user)
+        ->delete("/admin/competitions/{$competition->id}");
+
+    $this->assertDatabaseMissing('competitions', [
+        'id' => $competition->id,
+    ]);
+});
+
+test('validates negative values', function () {
+    $invalidCompetition = [
+        'data' => [
+            'name' => 'Test Competition',
+            'entry_fee' => -50.00, // Negative value
+            'prize_pool' => -1000.00, // Negative value
+            'start_time' => now()->addDays(1),
+            'end_time' => now()->addDays(2),
+            'max_users' => 100,
+            'status' => 'upcoming'
+        ]
+    ];
+
+    $response = $this->actingAs($this->user)
+        ->post('/admin/competitions', $invalidCompetition);
+
+    $this->assertDatabaseMissing('competitions', [
+        'name' => 'Test Competition'
+    ]);
+});

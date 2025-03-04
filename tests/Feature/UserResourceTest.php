@@ -1,6 +1,9 @@
 <?php
 
 use App\Filament\Resources\UserResource;
+use \App\Filament\Resources\UserResource\Pages\EditUser;
+use \App\Filament\Resources\UserResource\Pages\CreateUser;
+use \App\Filament\Resources\UserResource\Pages\ListUsers;
 use App\Models\User;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\DeleteBulkAction;
@@ -98,11 +101,11 @@ test('validates required fields when creating user', function () {
 test('validates email format', function () {
     livewire(UserResource\Pages\CreateUser::class)
         ->fillForm([
-            'name' => 'Test User',
-            'email' => 'invalid-email',
-            'role' => 'admin',
-            'password' => 'password123'
+            'data.name' => 'Test User',
+            'data.email' => 'invalid-email',
+            'data.role' => 'admin',
+            'data.password' => 'password123'
         ])
         ->call('create')
-        ->assertHasFormErrors(['email' => 'email']);
+        ->assertHasFormErrors(['data.email' => 'email']);
 });
