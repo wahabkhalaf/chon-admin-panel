@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\CompetitionResource\Pages;
+use App\Filament\Resources\CompetitionResource\Widgets\CompetitionStats;
 use App\Models\Competition;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -10,7 +11,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Carbon;
+
 
 class CompetitionResource extends Resource
 {
@@ -138,6 +139,13 @@ class CompetitionResource extends Resource
     {
         return [
             //
+        ];
+    }
+
+    public static function getWidgets(): array
+    {
+        return [
+            CompetitionStats::class,
         ];
     }
 

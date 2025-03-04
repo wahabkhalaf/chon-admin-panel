@@ -62,6 +62,39 @@ class Competition extends Model
                Carbon::now()->gt($this->end_time);
     }
 
+    public static function getActiveCompetitionsCount(): int
+    {
+        return static::where('status', 'active')
+            ->where('start_time', '<=', now())
+            ->where('end_time', '>=', now())
+            ->count();
+    }
+
+    public static function getUpcomingCompetitionsCount(): int
+    {
+        return static::where('status', 'upcoming')
+            ->where('start_time', '>', now())
+            ->count();
+    }
+
+    public static function getTotalPrizePool(): float
+    {
+        return static::where('status', 'active')
+            ->sum('prize_pool');
+    }
+
+    public static function getAverageEntryFee(): float
+    {
+        return static::where('status', 'active')
+            ->avg('entry_fee') ?? 0;
+    }
+
+    public static function getCompletedCompetitionsCount(): int
+    {
+        return static::where('status', 'completed')
+            ->count();
+    }
+
     protected static function boot()
     {
         parent::boot();

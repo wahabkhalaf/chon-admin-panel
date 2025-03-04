@@ -16,4 +16,11 @@ class ListCompetitions extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            CompetitionResource\Widgets\CompetitionStats::class,
+        ];
+    }
 }
