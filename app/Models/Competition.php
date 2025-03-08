@@ -167,4 +167,13 @@ class Competition extends Model
         return $this->isUpcoming();
     }
 
+    /**
+     * The questions associated with the competition.
+     */
+    public function questions()
+    {
+        return $this->belongsToMany(Question::class, 'competitions_questions')
+            ->withTimestamps();
+    }
+
 }

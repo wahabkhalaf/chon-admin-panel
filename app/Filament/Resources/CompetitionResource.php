@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\CompetitionResource\Pages;
+use App\Filament\Resources\CompetitionResource\RelationManagers\QuestionsRelationManager;
 use App\Filament\Resources\CompetitionResource\Widgets\CompetitionStats;
 use App\Models\Competition;
 use Filament\Forms;
@@ -17,7 +18,7 @@ class CompetitionResource extends Resource
 {
     protected static ?string $model = Competition::class;
     protected static ?string $navigationIcon = 'heroicon-o-trophy';
-    protected static ?string $navigationGroup = 'Game Management';
+    protected static ?string $navigationGroup = 'Competition Management';
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
@@ -266,7 +267,7 @@ class CompetitionResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            QuestionsRelationManager::class,
         ];
     }
 
