@@ -105,19 +105,29 @@ class Question extends Model
     }
 
     /**
-     * Check if the question can be edited
-     * Only allow editing if not attached to any non-upcoming competitions
+     * Determine if the question can be edited.
+     * 
+     * @return bool
      */
     public function canEdit(): bool
     {
-        // Get count of non-upcoming competitions this question is attached to
-        $nonUpcomingCount = $this->competitions()->whereIn('id', function ($query) {
-            $query->select('id')
-                ->from('competitions')
-                ->where('open_time', '<=', now());
-        })->count();
+        // Check if the question is attached to any active or started competitions
+        $now = now();
 
-        // Can edit if not attached to any non-upcoming competitions
-        return $nonUpcomingCount === 0;
+        // Count competitions where:
+        // 1. Competition has already started (start_time <= now) OR
+        // 2. Competition is open for registration (open_time <= now < start_time)
+        $activeOrStartedCompetitionsCount = $this->competitions()
+            ->where(function ($query) use ($now) {
+                $query->where('start_time', '<=', $now) // Already started or active
+                    ->orWhere(function ($query) use ($now) {
+                        $query->where('open_time', '<=', $now) // Open for registration
+                            ->where('start_time', '>', $now);
+                    });
+            })
+            ->count();
+
+        // Question can be edited only if it's not attached to any active or started competitions
+        return $activeOrStartedCompetitionsCount === 0;
     }
 }

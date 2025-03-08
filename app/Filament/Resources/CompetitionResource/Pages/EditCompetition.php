@@ -13,6 +13,11 @@ class EditCompetition extends EditRecord
 {
     protected static string $resource = CompetitionResource::class;
 
+    public function getContentTabLabel(): string|null
+    {
+        return 'Competition Details';
+    }
+
     protected function getHeaderActions(): array
     {
         $status = $this->record->getStatus();

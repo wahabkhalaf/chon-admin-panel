@@ -12,6 +12,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -142,16 +143,17 @@ class QuestionResource extends Resource
                         'danger' => fn(string $state): bool => $state === 'hard',
                     ])
                     ->label('Difficulty'),
-                Tables\Columns\BadgeColumn::make('age')
-                    ->label('Age')
-                    ->getStateUsing(function ($record) {
-                        // Consider questions created within the last 7 days as new
-                        return $record->created_at->diffInDays(now()) < 7 ? 'new' : 'old';
-                    })
-                    ->colors([
-                        'success' => 'new',
-                        'secondary' => 'old',
-                    ]),
+                Tables\Columns\IconColumn::make('editable')
+                    ->label('Status')
+                    ->getStateUsing(fn(Model $record): bool => $record->canEdit())
+                    ->boolean()
+                    ->trueIcon('heroicon-o-pencil')
+                    ->falseIcon('heroicon-o-lock-closed')
+                    ->trueColor('success')
+                    ->falseColor('danger')
+                    ->tooltip(fn(Model $record): string => $record->canEdit()
+                        ? 'Editable'
+                        : 'Locked - Used in active competition'),
                 Tables\Columns\TextColumn::make('competitions_count')
                     ->label('Used In')
                     ->getStateUsing(function ($record) {
@@ -183,12 +185,13 @@ class QuestionResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
+                    ->visible(fn(Model $record): bool => $record->canEdit())
                     ->beforeFormFilled(function (Tables\Actions\EditAction $action, Model $record): void {
-                        // Check if the question can be edited
+                        // Double-check if the question can be edited (redundant with visible condition but kept for safety)
                         if (!$record->canEdit()) {
                             Notification::make()
                                 ->title('Cannot edit question')
-                                ->body('This question is attached to active or completed competitions and cannot be edited.')
+                                ->body('This question is attached to competitions that are open for registration or already active. Questions in active competitions cannot be modified.')
                                 ->danger()
                                 ->send();
 
@@ -196,22 +199,41 @@ class QuestionResource extends Resource
                         }
                     }),
                 Tables\Actions\DeleteAction::make()
+                    ->visible(fn(Model $record): bool => $record->canEdit())
                     ->before(function (Tables\Actions\DeleteAction $action, Model $record): void {
-                        // Check if the question can be deleted
+                        // Double-check if the question can be deleted (redundant with visible condition but kept for safety)
                         if (!$record->canEdit()) {
                             Notification::make()
                                 ->title('Cannot delete question')
-                                ->body('This question is attached to active or completed competitions and cannot be deleted.')
+                                ->body('This question is attached to competitions that are open for registration or already active. Questions in active competitions cannot be deleted.')
                                 ->danger()
                                 ->send();
 
                             $action->cancel();
                         }
                     }),
+                Tables\Actions\ViewAction::make()
+                    ->modalContent(fn(Question $record) => view('filament.resources.question-resource.question-detail', [
+                        'question' => $record
+                    ])),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->before(function (Tables\Actions\DeleteBulkAction $action, Collection $records): void {
+                            // Check if any of the questions cannot be deleted
+                            $nonEditableQuestions = $records->filter(fn($record) => !$record->canEdit())->count();
+
+                            if ($nonEditableQuestions > 0) {
+                                Notification::make()
+                                    ->title('Cannot delete some questions')
+                                    ->body("$nonEditableQuestions question(s) are attached to active competitions and cannot be deleted.")
+                                    ->danger()
+                                    ->send();
+
+                                $action->cancel();
+                            }
+                        }),
                 ]),
             ]);
     }

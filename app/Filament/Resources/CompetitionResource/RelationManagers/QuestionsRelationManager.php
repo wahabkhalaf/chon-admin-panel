@@ -76,17 +76,16 @@ class QuestionsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('correct_answer')
                     ->label('Answer')
                     ->limit(20),
-
-                Tables\Columns\BadgeColumn::make('age')
-                    ->label('Age')
-                    ->getStateUsing(function ($record) {
-                        // Consider questions created within the last 7 days as new
-                        return $record->created_at->diffInDays(now()) < 7 ? 'new' : 'old';
-                    })
-                    ->colors([
-                        'success' => 'new',
-                        'secondary' => 'old',
-                    ]),
+                // Tables\Columns\BadgeColumn::make('age')
+                //     ->label('Freshness')
+                //     ->getStateUsing(function ($record) {
+                //         // Consider questions created within the last 7 days as new
+                //         return $record->created_at->diffInDays(now()) < 7 ? 'new' : 'old';
+                //     })
+                //     ->colors([
+                //         'success' => 'new',
+                //         'secondary' => 'old',
+                //     ]),
 
                 Tables\Columns\TextColumn::make('competitions_count')
                     ->label('Used In')
