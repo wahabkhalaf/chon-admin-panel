@@ -16,15 +16,15 @@ class CompetitionStats extends BaseWidget
                 ->color('success')
                 ->chart([7, 3, 4, 5, 6, 3, 5]),
 
+            Stat::make('Open for Registration', Competition::getOpenCompetitionsCount())
+                ->description('Competitions accepting registrations')
+                ->color('info')
+                ->chart([3, 5, 7, 8, 6, 4, 5]),
+
             Stat::make('Upcoming Competitions', Competition::getUpcomingCompetitionsCount())
                 ->description('Scheduled competitions')
                 ->color('warning')
                 ->chart([3, 2, 4, 3, 4, 5, 4]),
-
-            Stat::make('Total Active Prize Pool', number_format(Competition::getTotalPrizePool(), 2) . ' IQD')
-                ->description('Sum of all active competition prizes')
-                ->color('success')
-                ->chart([4, 5, 3, 4, 5, 6, 5]),
 
             Stat::make('Average Entry Fee', number_format(Competition::getAverageEntryFee(), 2) . ' IQD')
                 ->description('Average entry fee for active competitions')
@@ -35,6 +35,11 @@ class CompetitionStats extends BaseWidget
                 ->description('Total finished competitions')
                 ->color('gray')
                 ->chart([2, 4, 6, 8, 10, 12, 14]),
+
+            Stat::make('Most Popular Game Type', Competition::getMostPopularGameType())
+                ->description('Most common game type')
+                ->color('primary')
+                ->chart([3, 5, 7, 8, 6, 4, 5]),
         ];
     }
 }
