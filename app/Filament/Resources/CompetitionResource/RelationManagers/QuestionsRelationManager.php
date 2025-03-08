@@ -9,6 +9,7 @@ use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Enums\FontWeight;
+use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,6 +23,8 @@ class QuestionsRelationManager extends RelationManager
     protected static string $relationship = 'questions';
 
     protected static ?string $recordTitleAttribute = 'question_text';
+
+    protected static ?string $title = 'Competition Questions';
 
     public function form(Form $form): Form
     {
@@ -111,6 +114,17 @@ class QuestionsRelationManager extends RelationManager
             ->headerActions([
                 Tables\Actions\AttachAction::make()
                     ->preloadRecordSelect()
+                    ->recordTitle(fn(Question $record): string =>
+                        $record->question_text . ' (' . Question::TYPES[$record->question_type] . ' - ' . ucfirst($record->level) . ')')
+                    ->recordSelectSearchColumns(['question_text'])
+                    ->form(fn(Tables\Actions\AttachAction $action): array => [
+                        $action->getRecordSelect()
+                            ->label('Select Questions')
+                            ->helperText('Search by question text')
+                            ->searchDebounce(500)
+                            ->searchPrompt('Type to search questions...')
+                            ->optionsLimit(50),
+                    ])
                     ->multiple()
                     ->label('Attach Questions')
                     ->visible(function (): bool {
@@ -131,6 +145,7 @@ class QuestionsRelationManager extends RelationManager
                             $action->cancel();
                         }
                     })
+                    ->modalWidth(MaxWidth::FiveExtraLarge)
                     ->color('primary')
                     ->icon('heroicon-o-plus-circle'),
             ])
