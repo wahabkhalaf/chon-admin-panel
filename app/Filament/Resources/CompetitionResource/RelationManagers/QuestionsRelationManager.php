@@ -6,10 +6,13 @@ use App\Models\CompetitionQuestion;
 use App\Models\Question;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class QuestionsRelationManager extends RelationManager
@@ -58,6 +61,25 @@ class QuestionsRelationManager extends RelationManager
                         'warning' => fn(string $state): bool => $state === 'medium',
                         'danger' => fn(string $state): bool => $state === 'hard',
                     ]),
+
+                Tables\Columns\BadgeColumn::make('age')
+                    ->label('Age')
+                    ->getStateUsing(function ($record) {
+                        // Consider questions created within the last 7 days as new
+                        return $record->created_at->diffInDays(now()) < 7 ? 'new' : 'old';
+                    })
+                    ->colors([
+                        'success' => 'new',
+                        'secondary' => 'old',
+                    ]),
+
+                Tables\Columns\TextColumn::make('competitions_count')
+                    ->label('Used In')
+                    ->getStateUsing(function ($record) {
+                        return $record->competitions()->count();
+                    })
+                    ->badge()
+                    ->color('primary'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('question_type')
@@ -70,15 +92,48 @@ class QuestionsRelationManager extends RelationManager
             ])
             ->headerActions([
                 Tables\Actions\AttachAction::make()
-                    ->preloadRecordSelect(),
+                    ->preloadRecordSelect()
+                    ->multiple()
+                    ->visible(function (): bool {
+                        // Only allow attaching questions if competition is upcoming
+                        return $this->getOwnerRecord()->isUpcoming();
+                    })
+                    ->before(function (Tables\Actions\AttachAction $action, array $data): void {
+                        // Check if the question is already attached to avoid duplicates
+                        $questionId = $data['recordId'];
+                        $competition = $this->getOwnerRecord();
+
+                        if ($competition->questions()->where('id', $questionId)->exists()) {
+                            Notification::make()
+                                ->title('Question already attached')
+                                ->danger()
+                                ->send();
+
+                            $action->cancel();
+                        }
+                    }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DetachAction::make(),
+                Tables\Actions\DetachAction::make()
+                    ->visible(function (Model $record): bool {
+                        // Only allow detaching questions if competition is upcoming
+                        return $this->getOwnerRecord()->isUpcoming();
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DetachBulkAction::make(),
+                    Tables\Actions\DetachBulkAction::make()
+                        ->visible(function (): bool {
+                            // Only allow detaching questions if competition is upcoming
+                            return $this->getOwnerRecord()->isUpcoming();
+                        })
+                        ->before(function (Collection $records): void {
+                            // Show notification about how many questions are being detached
+                            Notification::make()
+                                ->title('Detaching ' . $records->count() . ' questions')
+                                ->info()
+                                ->send();
+                        }),
                 ]),
             ]);
     }

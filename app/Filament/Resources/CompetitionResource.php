@@ -267,7 +267,7 @@ class CompetitionResource extends Resource
     public static function getRelations(): array
     {
         return [
-            QuestionsRelationManager::class,
+           // QuestionsRelationManager::class,
         ];
     }
 
@@ -284,6 +284,7 @@ class CompetitionResource extends Resource
             'index' => Pages\ListCompetitions::route('/'),
             'create' => Pages\CreateCompetition::route('/create'),
             'edit' => Pages\EditCompetition::route('/{record}/edit'),
+            'questions' => Pages\ManageCompetitionQuestions::route('/{record}/questions'),
         ];
     }
 

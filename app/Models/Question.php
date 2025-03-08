@@ -75,4 +75,49 @@ class Question extends Model
             }
         });
     }
+
+    /**
+     * Check if the question is new (less than 7 days old)
+     */
+    public function isNew(): bool
+    {
+        return $this->created_at->diffInDays(now()) < 7;
+    }
+
+    /**
+     * Count competitions this question is attached to
+     */
+    public function getCompetitionsCountAttribute(): int
+    {
+        return $this->competitions()->count();
+    }
+
+    /**
+     * Get all upcoming competitions this question is attached to
+     */
+    public function getUpcomingCompetitionsAttribute()
+    {
+        return $this->competitions()->whereIn('id', function ($query) {
+            $query->select('id')
+                ->from('competitions')
+                ->where('open_time', '>', now());
+        })->get();
+    }
+
+    /**
+     * Check if the question can be edited
+     * Only allow editing if not attached to any non-upcoming competitions
+     */
+    public function canEdit(): bool
+    {
+        // Get count of non-upcoming competitions this question is attached to
+        $nonUpcomingCount = $this->competitions()->whereIn('id', function ($query) {
+            $query->select('id')
+                ->from('competitions')
+                ->where('open_time', '<=', now());
+        })->count();
+
+        // Can edit if not attached to any non-upcoming competitions
+        return $nonUpcomingCount === 0;
+    }
 }

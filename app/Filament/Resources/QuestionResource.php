@@ -7,10 +7,12 @@ use App\Filament\Resources\QuestionResource\RelationManagers;
 use App\Models\Question;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class QuestionResource extends Resource
@@ -70,7 +72,7 @@ class QuestionResource extends Resource
                             ->label('Answer Options'),
 
                         // Puzzle answer
-                        Forms\Components\TextInput::make('puzzle_answer')
+                        Forms\Components\TextInput::make('correct_answer')
                             ->required(fn(callable $get) => $get('question_type') === 'puzzle')
                             ->visible(fn(callable $get) => $get('question_type') === 'puzzle')
                             ->reactive()
@@ -140,6 +142,23 @@ class QuestionResource extends Resource
                         'danger' => fn(string $state): bool => $state === 'hard',
                     ])
                     ->label('Difficulty'),
+                Tables\Columns\BadgeColumn::make('age')
+                    ->label('Age')
+                    ->getStateUsing(function ($record) {
+                        // Consider questions created within the last 7 days as new
+                        return $record->created_at->diffInDays(now()) < 7 ? 'new' : 'old';
+                    })
+                    ->colors([
+                        'success' => 'new',
+                        'secondary' => 'old',
+                    ]),
+                Tables\Columns\TextColumn::make('competitions_count')
+                    ->label('Used In')
+                    ->getStateUsing(function ($record) {
+                        return $record->competitions()->count();
+                    })
+                    ->badge()
+                    ->color('primary'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -148,10 +167,47 @@ class QuestionResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('question_type')
                     ->options(Question::TYPES),
+
+                Tables\Filters\SelectFilter::make('level')
+                    ->options(Question::LEVELS),
+
+                Tables\Filters\Filter::make('new_questions')
+                    ->label('New Questions')
+                    ->query(fn(Builder $query): Builder => $query->where('created_at', '>=', now()->subDays(7))),
+
+                Tables\Filters\Filter::make('unused_questions')
+                    ->label('Unused Questions')
+                    ->query(function (Builder $query): Builder {
+                        return $query->whereDoesntHave('competitions');
+                    }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->beforeFormFilled(function (Tables\Actions\EditAction $action, Model $record): void {
+                        // Check if the question can be edited
+                        if (!$record->canEdit()) {
+                            Notification::make()
+                                ->title('Cannot edit question')
+                                ->body('This question is attached to active or completed competitions and cannot be edited.')
+                                ->danger()
+                                ->send();
+
+                            $action->cancel();
+                        }
+                    }),
+                Tables\Actions\DeleteAction::make()
+                    ->before(function (Tables\Actions\DeleteAction $action, Model $record): void {
+                        // Check if the question can be deleted
+                        if (!$record->canEdit()) {
+                            Notification::make()
+                                ->title('Cannot delete question')
+                                ->body('This question is attached to active or completed competitions and cannot be deleted.')
+                                ->danger()
+                                ->send();
+
+                            $action->cancel();
+                        }
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
