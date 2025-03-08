@@ -33,12 +33,7 @@ class EditCompetition extends EditRecord
         };
 
         return [
-            Actions\Action::make('manageQuestions')
-                ->label('Manage Questions')
-                ->icon('heroicon-o-clipboard-document-list')
-                ->url(fn(Model $record) => CompetitionResource::getUrl('questions', ['record' => $record]))
-                ->color('secondary'),
-            // Add a status badge as a header action
+          
             Actions\Action::make('status')
                 ->label($statusLabel)
                 ->color($statusColor)
@@ -200,5 +195,10 @@ class EditCompetition extends EditRecord
         return [
             // You can add widgets here if needed
         ];
+    }
+    // make reations a tab
+    public function hasCombinedRelationManagerTabsWithContent(): bool
+    {
+        return true;
     }
 }

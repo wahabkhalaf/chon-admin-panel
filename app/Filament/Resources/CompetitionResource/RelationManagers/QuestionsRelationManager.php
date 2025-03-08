@@ -8,16 +8,20 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\HtmlString;
 
 class QuestionsRelationManager extends RelationManager
 {
     protected static string $relationship = 'questions';
+
+    protected static ?string $recordTitleAttribute = 'question_text';
 
     public function form(Form $form): Form
     {
@@ -34,6 +38,13 @@ class QuestionsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->heading(function () {
+                $competition = $this->getOwnerRecord();
+
+                return new HtmlString(view('filament.resources.competition-resource.relation-managers.questions-header', [
+                    'competition' => $competition,
+                ]));
+            })
             ->recordTitleAttribute('id')
             ->columns([
                 Tables\Columns\TextColumn::make('question_text')
@@ -62,6 +73,10 @@ class QuestionsRelationManager extends RelationManager
                         'danger' => fn(string $state): bool => $state === 'hard',
                     ]),
 
+                Tables\Columns\TextColumn::make('correct_answer')
+                    ->label('Answer')
+                    ->limit(20),
+
                 Tables\Columns\BadgeColumn::make('age')
                     ->label('Age')
                     ->getStateUsing(function ($record) {
@@ -89,11 +104,16 @@ class QuestionsRelationManager extends RelationManager
                 Tables\Filters\SelectFilter::make('level')
                     ->options(Question::LEVELS)
                     ->label('Difficulty'),
+
+                Tables\Filters\Filter::make('new_questions')
+                    ->label('New Questions')
+                    ->query(fn(Builder $query): Builder => $query->where('created_at', '>=', now()->subDays(7))),
             ])
             ->headerActions([
                 Tables\Actions\AttachAction::make()
                     ->preloadRecordSelect()
                     ->multiple()
+                    ->label('Attach Questions')
                     ->visible(function (): bool {
                         // Only allow attaching questions if competition is upcoming
                         return $this->getOwnerRecord()->isUpcoming();
@@ -103,7 +123,7 @@ class QuestionsRelationManager extends RelationManager
                         $questionId = $data['recordId'];
                         $competition = $this->getOwnerRecord();
 
-                        if ($competition->questions()->where('id', $questionId)->exists()) {
+                        if ($competition->questions()->where('questions.id', $questionId)->exists()) {
                             Notification::make()
                                 ->title('Question already attached')
                                 ->danger()
@@ -111,9 +131,15 @@ class QuestionsRelationManager extends RelationManager
 
                             $action->cancel();
                         }
-                    }),
+                    })
+                    ->color('primary')
+                    ->icon('heroicon-o-plus-circle'),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->modalContent(fn(Question $record) => view('filament.resources.question-resource.question-detail', [
+                        'question' => $record
+                    ])),
                 Tables\Actions\DetachAction::make()
                     ->visible(function (Model $record): bool {
                         // Only allow detaching questions if competition is upcoming
