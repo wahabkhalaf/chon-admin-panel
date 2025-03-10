@@ -126,6 +126,7 @@ class QuestionResource extends Resource
                     ->label('Question'),
                 Tables\Columns\TextColumn::make('question_type')
                     ->badge()
+                    ->sortable()
                     ->formatStateUsing(fn(string $state): string => Question::TYPES[$state] ?? $state)
                     ->colors([
                         'primary' => fn(string $state): bool => $state === 'multi_choice',
@@ -136,6 +137,7 @@ class QuestionResource extends Resource
                     ]),
                 Tables\Columns\TextColumn::make('level')
                     ->badge()
+                    ->sortable()
                     ->formatStateUsing(fn(string $state): string => ucfirst($state))
                     ->colors([
                         'success' => fn(string $state): bool => $state === 'easy',
@@ -143,17 +145,18 @@ class QuestionResource extends Resource
                         'danger' => fn(string $state): bool => $state === 'hard',
                     ])
                     ->label('Difficulty'),
-                Tables\Columns\IconColumn::make('editable')
-                    ->label('Status')
-                    ->getStateUsing(fn(Model $record): bool => $record->canEdit())
-                    ->boolean()
-                    ->trueIcon('heroicon-o-pencil')
-                    ->falseIcon('heroicon-o-lock-closed')
-                    ->trueColor('success')
-                    ->falseColor('danger')
-                    ->tooltip(fn(Model $record): string => $record->canEdit()
-                        ? 'Editable'
-                        : 'Locked - Used in active competition'),
+                // Tables\Columns\IconColumn::make('editable')
+                //     ->label('Status')
+                //     ->sortable()
+                //     ->getStateUsing(fn(Model $record): bool => $record->canEdit())
+                //     ->boolean()
+                //     ->trueIcon('heroicon-o-pencil')
+                //     ->falseIcon('heroicon-o-lock-closed')
+                //     ->trueColor('success')
+                //     ->falseColor('danger')
+                //     ->tooltip(fn(Model $record): string => $record->canEdit()
+                //         ? 'Editable'
+                //         : 'Locked - Used in active competition'),
                 Tables\Columns\TextColumn::make('competitions_count')
                     ->label('Used In')
                     ->getStateUsing(function ($record) {
