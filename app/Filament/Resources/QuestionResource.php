@@ -248,6 +248,16 @@ class QuestionResource extends Resource
         ];
     }
 
+    /**
+     * Get the form schema for this resource.
+     * This method is primarily used for testing.
+     */
+    public static function getFormSchema(): array
+    {
+        return Forms\Components\Section::make('Question Details')
+            ->getChildComponents();
+    }
+
     public static function getPages(): array
     {
         return [

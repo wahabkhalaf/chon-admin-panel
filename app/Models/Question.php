@@ -97,7 +97,7 @@ class Question extends Model
      */
     public function getUpcomingCompetitionsAttribute()
     {
-        return $this->competitions()->whereIn('id', function ($query) {
+        return $this->competitions()->whereIn('competitions.id', function ($query) {
             $query->select('id')
                 ->from('competitions')
                 ->where('open_time', '>', now());
@@ -115,19 +115,24 @@ class Question extends Model
         $now = now();
 
         // Count competitions where:
-        // 1. Competition has already started (start_time <= now) OR
+        // 1. Competition has already started but not ended (start_time <= now < end_time) OR
         // 2. Competition is open for registration (open_time <= now < start_time)
-        $activeOrStartedCompetitionsCount = $this->competitions()
+        $activeOrOpenCompetitionsCount = $this->competitions()
             ->where(function ($query) use ($now) {
-                $query->where('start_time', '<=', $now) // Already started or active
+                $query->where(function ($query) use ($now) {
+                    // Already started but not ended
+                    $query->where('start_time', '<=', $now)
+                        ->where('end_time', '>', $now);
+                })
                     ->orWhere(function ($query) use ($now) {
-                        $query->where('open_time', '<=', $now) // Open for registration
+                        // Open for registration
+                        $query->where('open_time', '<=', $now)
                             ->where('start_time', '>', $now);
                     });
             })
             ->count();
 
-        // Question can be edited only if it's not attached to any active or started competitions
-        return $activeOrStartedCompetitionsCount === 0;
+        // Question can be edited only if it's not attached to any active or open competitions
+        return $activeOrOpenCompetitionsCount === 0;
     }
 }
