@@ -1,0 +1,136 @@
+@startuml
+
+' ========== Core Users & Players ==========
+class Users {
+    + int id
+    + String username
+    + String password_hash
+    + ENUM role
+    + String email
+    + Timestamp created_at
+    + Timestamp updated_at
+}
+
+class Players {
+    + int id
+    + String whatsapp_number
+    + String nickname
+    + int total_score
+    + int level
+    + int experience_points
+    + Timestamp joined_at
+    + Timestamp updated_at
+}
+class PlayerOtps {
+    + int id
+    + int player_id
+    + String otp_code
+    + ENUM purpose
+    + Boolean is_verified
+    + Timestamp expires_at
+    + Timestamp created_at
+}
+
+
+class Achievements {
+    + int id
+    + int player_id
+    + String title
+    + String description
+    + Timestamp unlocked_at
+}
+
+Achievements --> Players : player_id
+
+' ========== Competitions & Related Tables ==========
+class Competitions {
+    + int id
+    + String name
+    + String description
+    + Decimal entry_fee
+    + Decimal prize_pool
+    + Timestamp open_time
+    + Timestamp start_time
+    + Timestamp end_time
+    + int max_users
+    + String game_type
+    + Timestamp created_at
+    + Timestamp updated_at
+}
+
+class PrizeTiers {
+    + int id
+    + int competition_id
+    + int rank_from
+    + int rank_to
+    + ENUM prize_type
+    + Decimal prize_value
+    + Timestamp created_at
+    + Timestamp updated_at
+}
+
+PrizeTiers --> Competitions : competition_id
+
+' ========== Questions & Linking ==========
+class Questions {
+    + int id
+    + String question_text
+    + ENUM question_type
+    + JSONB options
+    + String correct_answer
+    + Timestamp created_at
+}
+
+class CompetitionsQuestions {
+    + int id
+    + int competition_id
+    + int question_id
+    + Timestamp created_at
+}
+
+CompetitionsQuestions --> Competitions : competition_id
+CompetitionsQuestions --> Questions : question_id
+
+' ========== Answers ==========
+class UserAnswers {
+    + int id
+    + int player_id
+    + int competition_id
+    + int question_id
+    + String user_answer
+    + Boolean is_correct
+    + Timestamp answered_at
+}
+
+UserAnswers --> Players : player_id
+UserAnswers --> Competitions : competition_id
+UserAnswers --> Questions : question_id
+
+' ========== Leaderboard ==========
+class SessionLeaderboard {
+    + int id
+    + int player_id
+    + int competition_id
+    + int score
+    + int rank
+    + Timestamp created_at
+}
+
+SessionLeaderboard --> Players : player_id
+SessionLeaderboard --> Competitions : competition_id
+
+' ========== Transactions ==========
+class Transactions {
+    + int id
+    + int player_id
+    + int competition_id
+    + Decimal amount
+    + ENUM transaction_type
+    + ENUM status
+    + Timestamp created_at
+}
+
+Transactions --> Players : player_id
+Transactions --> Competitions : competition_id
+PlayerOtps --> Players : player_id
+@enduml
