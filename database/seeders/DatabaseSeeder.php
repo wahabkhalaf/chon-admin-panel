@@ -28,7 +28,9 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             CompetitionSeeder::class,
+            PaymentMethodSeeder::class,
             PlayerSeeder::class,
+            TransactionSeeder::class,
                 // ...other seeders...
             QuestionSeeder::class,
         ]);

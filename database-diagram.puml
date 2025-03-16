@@ -21,6 +21,7 @@ class Players {
     + Timestamp joined_at
     + Timestamp updated_at
 }
+
 class PlayerOtps {
     + int id
     + int player_id
@@ -30,7 +31,6 @@ class PlayerOtps {
     + Timestamp expires_at
     + Timestamp created_at
 }
-
 
 class Achievements {
     + int id
@@ -127,10 +127,51 @@ class Transactions {
     + Decimal amount
     + ENUM transaction_type
     + ENUM status
+    + String payment_method
+    + String payment_provider
+    + JSONB payment_details
     + Timestamp created_at
 }
 
 Transactions --> Players : player_id
 Transactions --> Competitions : competition_id
+
+' ========== Payment Methods ==========
+class PaymentMethods {
+    + int id
+    + String name
+    + String code
+    + String provider
+    + Boolean is_active
+    + Boolean supports_deposit
+    + Boolean supports_withdrawal
+    + Decimal min_amount
+    + Decimal max_amount
+    + Decimal fee_fixed
+    + Decimal fee_percentage
+    + int processing_time_hours
+    + String instructions
+    + JSONB config
+    + Timestamp created_at
+    + Timestamp updated_at
+}
+
+class PlayerPaymentMethods {
+    + int id
+    + int player_id
+    + int payment_method_id
+    + String token
+    + String external_id
+    + String nickname
+    + JSONB details
+    + Boolean is_default
+    + Timestamp last_used_at
+    + Timestamp created_at
+    + Timestamp updated_at
+}
+
+PlayerPaymentMethods --> Players : player_id
+PlayerPaymentMethods --> PaymentMethods : payment_method_id
+
 PlayerOtps --> Players : player_id
 @enduml
