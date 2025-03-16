@@ -34,6 +34,7 @@ class QuestionResource extends Resource
                         Forms\Components\Textarea::make('question_text')
                             ->required()
                             ->maxLength(1000)
+                            ->columnSpan(2)
                             ->label('Question'),
 
                         Forms\Components\Select::make('question_type')
@@ -46,6 +47,7 @@ class QuestionResource extends Resource
                                     $set('options', []);
                                 }
                             })
+
                             ->label('Question Type'),
 
                         Forms\Components\Select::make('level')
@@ -63,14 +65,54 @@ class QuestionResource extends Resource
                                     ->required()
                                     ->reactive()
                                     ->afterStateUpdated(function ($state, callable $set, $livewire) {
+                                        if (!isset($livewire->data['options'])) {
+                                            return;
+                                        }
+
+                                        // Get current repeater item
+                                        $currentIndex = array_key_last($livewire->data['options']);
+
                                         if ($state) {
-                                            $livewire->data['correct_answer'] = $livewire->data['options'][$livewire->repeaters['data.options']['repeaterIndex']]['option'];
+                                            // When marking an option as correct, set all others to false
+                                            foreach ($livewire->data['options'] as $index => $option) {
+                                                if ($index !== $currentIndex) {
+                                                    $set("options.{$index}.is_correct", false);
+                                                }
+                                            }
+
+                                            // Set the correct answer
+                                            if (isset($livewire->data['options'][$currentIndex]['option'])) {
+                                                $set('correct_answer', $livewire->data['options'][$currentIndex]['option']);
+                                            }
+                                        } else {
+                                            // Check if any option is marked as correct
+                                            $hasCorrectOption = false;
+                                            foreach ($livewire->data['options'] as $option) {
+                                                if (($option['is_correct'] ?? false) === true) {
+                                                    $hasCorrectOption = true;
+                                                    break;
+                                                }
+                                            }
+
+                                            // If no correct option exists, show error notification
+                                            if (!$hasCorrectOption) {
+                                                $set("options.{$currentIndex}.is_correct", true);
+                                                Notification::make()
+                                                    ->warning()
+                                                    ->title('At least one option must be marked as correct')
+                                                    ->send();
+                                            }
                                         }
                                     }),
                             ])
                             ->columns(2)
+                            ->minItems(2)
+                            ->maxItems(5)
                             ->visible(fn(callable $get) => $get('question_type') === 'multi_choice')
-                            ->label('Answer Options'),
+                            ->label('Answer Options')
+                            ->rules(['array'])
+                            ->default([])
+                            ->live(),
 
                         // Puzzle answer
                         Forms\Components\TextInput::make('correct_answer')
@@ -111,7 +153,17 @@ class QuestionResource extends Resource
 
                         // Hidden field to store the correct answer
                         Forms\Components\Hidden::make('correct_answer')
-                            ->required(),
+                            ->required(function (callable $get) {
+                                $questionType = $get('question_type');
+                                // Only require correct_answer for specific question types
+                                return in_array($questionType, [
+                                    'multi_choice',
+                                    'puzzle',
+                                    'pattern_recognition',
+                                    'true_false',
+                                    'math'
+                                ]);
+                            }),
                     ]),
             ]);
     }
