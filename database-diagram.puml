@@ -1,177 +1,158 @@
-@startuml
+-- USERS (Admin and Moderator accounts)
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role ENUM('admin', 'moderator') NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-' ========== Core Users & Players ==========
-class Users {
-    + int id
-    + String username
-    + String password_hash
-    + ENUM role
-    + String email
-    + Timestamp created_at
-    + Timestamp updated_at
-}
+-- PLAYERS (Game players - no wallet balance)
+CREATE TABLE players (
+    id SERIAL PRIMARY KEY,
+    whatsapp_number VARCHAR(20) UNIQUE NOT NULL,
+    nickname VARCHAR(255) NOT NULL,
+    total_score INTEGER DEFAULT 0,
+    level INTEGER DEFAULT 1,
+    experience_points INTEGER DEFAULT 0,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-class Players {
-    + int id
-    + String whatsapp_number
-    + String nickname
-    + int total_score
-    + int level
-    + int experience_points
-    + Timestamp joined_at
-    + Timestamp updated_at
-}
+-- PLAYER OTPS (for registration/login)
+CREATE TABLE player_otps (
+    id SERIAL PRIMARY KEY,
+    player_id INT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    otp_code VARCHAR(10) NOT NULL,
+    purpose ENUM('login', 'register', 'password_reset') NOT NULL,
+    is_verified BOOLEAN DEFAULT FALSE,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-class PlayerOtps {
-    + int id
-    + int player_id
-    + String otp_code
-    + ENUM purpose
-    + Boolean is_verified
-    + Timestamp expires_at
-    + Timestamp created_at
-}
+-- ACHIEVEMENTS
+CREATE TABLE achievements (
+    id SERIAL PRIMARY KEY,
+    player_id INT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-class Achievements {
-    + int id
-    + int player_id
-    + String title
-    + String description
-    + Timestamp unlocked_at
-}
+-- COMPETITIONS
+CREATE TABLE competitions (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    entry_fee DECIMAL(10, 2) NOT NULL,
+    prize_pool DECIMAL(10, 2) DEFAULT 0,
+    open_time TIMESTAMP NOT NULL,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP NOT NULL,
+    max_users INT NOT NULL,
+    game_type VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-Achievements --> Players : player_id
+-- PRIZE TIERS
+CREATE TABLE prize_tiers (
+    id SERIAL PRIMARY KEY,
+    competition_id INT NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
+    rank_from INT NOT NULL,
+    rank_to INT NOT NULL,
+    prize_type ENUM('cash', 'item', 'points') NOT NULL,
+    prize_value DECIMAL(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-' ========== Competitions & Related Tables ==========
-class Competitions {
-    + int id
-    + String name
-    + String description
-    + Decimal entry_fee
-    + Decimal prize_pool
-    + Timestamp open_time
-    + Timestamp start_time
-    + Timestamp end_time
-    + int max_users
-    + String game_type
-    + Timestamp created_at
-    + Timestamp updated_at
-}
+-- QUESTIONS
+CREATE TABLE questions (
+    id SERIAL PRIMARY KEY,
+    question_text TEXT NOT NULL,
+    question_type ENUM('multiple_choice', 'puzzle', 'pattern', 'true_false', 'math') NOT NULL,
+    options JSONB,
+    correct_answer TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-class PrizeTiers {
-    + int id
-    + int competition_id
-    + int rank_from
-    + int rank_to
-    + ENUM prize_type
-    + Decimal prize_value
-    + Timestamp created_at
-    + Timestamp updated_at
-}
+-- COMPETITIONS QUESTIONS (pivot)
+CREATE TABLE competitions_questions (
+    id SERIAL PRIMARY KEY,
+    competition_id INT NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
+    question_id INT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-PrizeTiers --> Competitions : competition_id
+-- USER ANSWERS
+CREATE TABLE user_answers (
+    id SERIAL PRIMARY KEY,
+    player_id INT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    competition_id INT NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
+    question_id INT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+    user_answer TEXT NOT NULL,
+    is_correct BOOLEAN NOT NULL,
+    answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-' ========== Questions & Linking ==========
-class Questions {
-    + int id
-    + String question_text
-    + ENUM question_type
-    + JSONB options
-    + String correct_answer
-    + Timestamp created_at
-}
+-- SESSION LEADERBOARD
+CREATE TABLE session_leaderboard (
+    id SERIAL PRIMARY KEY,
+    player_id INT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    competition_id INT NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
+    score INT NOT NULL,
+    rank INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-class CompetitionsQuestions {
-    + int id
-    + int competition_id
-    + int question_id
-    + Timestamp created_at
-}
+-- TRANSACTIONS (only when applying to competitions)
+CREATE TABLE transactions (
+    id SERIAL PRIMARY KEY,
+    player_id INT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    competition_id INT NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
+    amount DECIMAL(10, 2) NOT NULL,
+    transaction_type ENUM('entry_fee') NOT NULL,
+    status ENUM('pending', 'completed', 'failed') NOT NULL,
+    payment_method VARCHAR(255),
+    payment_provider VARCHAR(255),
+    payment_details JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-CompetitionsQuestions --> Competitions : competition_id
-CompetitionsQuestions --> Questions : question_id
+-- PAYMENT METHODS (available for players)
+CREATE TABLE payment_methods (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    code VARCHAR(50) NOT NULL,
+    provider VARCHAR(255),
+    is_active BOOLEAN DEFAULT TRUE,
+    supports_deposit BOOLEAN DEFAULT TRUE,
+    supports_withdrawal BOOLEAN DEFAULT TRUE,
+    min_amount DECIMAL(10, 2) DEFAULT 0,
+    max_amount DECIMAL(10, 2) DEFAULT 10000,
+    fee_fixed DECIMAL(10, 2) DEFAULT 0,
+    fee_percentage DECIMAL(5, 2) DEFAULT 0,
+    processing_time_hours INT DEFAULT 24,
+    instructions TEXT,
+    config JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-' ========== Answers ==========
-class UserAnswers {
-    + int id
-    + int player_id
-    + int competition_id
-    + int question_id
-    + String user_answer
-    + Boolean is_correct
-    + Timestamp answered_at
-}
-
-UserAnswers --> Players : player_id
-UserAnswers --> Competitions : competition_id
-UserAnswers --> Questions : question_id
-
-' ========== Leaderboard ==========
-class SessionLeaderboard {
-    + int id
-    + int player_id
-    + int competition_id
-    + int score
-    + int rank
-    + Timestamp created_at
-}
-
-SessionLeaderboard --> Players : player_id
-SessionLeaderboard --> Competitions : competition_id
-
-' ========== Transactions ==========
-class Transactions {
-    + int id
-    + int player_id
-    + int competition_id
-    + Decimal amount
-    + ENUM transaction_type
-    + ENUM status
-    + String payment_method
-    + String payment_provider
-    + JSONB payment_details
-    + Timestamp created_at
-}
-
-Transactions --> Players : player_id
-Transactions --> Competitions : competition_id
-
-' ========== Payment Methods ==========
-class PaymentMethods {
-    + int id
-    + String name
-    + String code
-    + String provider
-    + Boolean is_active
-    + Boolean supports_deposit
-    + Boolean supports_withdrawal
-    + Decimal min_amount
-    + Decimal max_amount
-    + Decimal fee_fixed
-    + Decimal fee_percentage
-    + int processing_time_hours
-    + String instructions
-    + JSONB config
-    + Timestamp created_at
-    + Timestamp updated_at
-}
-
-class PlayerPaymentMethods {
-    + int id
-    + int player_id
-    + int payment_method_id
-    + String token
-    + String external_id
-    + String nickname
-    + JSONB details
-    + Boolean is_default
-    + Timestamp last_used_at
-    + Timestamp created_at
-    + Timestamp updated_at
-}
-
-PlayerPaymentMethods --> Players : player_id
-PlayerPaymentMethods --> PaymentMethods : payment_method_id
-
-PlayerOtps --> Players : player_id
-@enduml
+-- PLAYER PAYMENT METHODS (saved external payment info)
+CREATE TABLE player_payment_methods (
+    id SERIAL PRIMARY KEY,
+    player_id INT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    payment_method_id INT NOT NULL REFERENCES payment_methods(id) ON DELETE CASCADE,
+    token TEXT,
+    external_id TEXT,
+    nickname VARCHAR(255),
+    details JSONB,
+    is_default BOOLEAN DEFAULT FALSE,
+    last_used_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
