@@ -31,8 +31,6 @@ class TransactionFactory extends Factory
             'competition_id' => fake()->boolean(70) ? Competition::factory() : null,
             'amount' => fake()->randomFloat(2, 5, 1000),
             'transaction_type' => fake()->randomElement([
-                Transaction::TYPE_DEPOSIT,
-                Transaction::TYPE_WITHDRAWAL,
                 Transaction::TYPE_ENTRY_FEE,
                 Transaction::TYPE_PRIZE,
                 Transaction::TYPE_BONUS,
@@ -50,34 +48,6 @@ class TransactionFactory extends Factory
             'created_at' => fake()->dateTimeBetween('-1 year', 'now'),
             'updated_at' => fake()->boolean(70) ? fake()->dateTimeBetween('-1 month', 'now') : null,
         ];
-    }
-
-    /**
-     * Define a deposit transaction.
-     *
-     * @return \Illuminate\Database\Eloquent\Factories\Factory
-     */
-    public function deposit(): Factory
-    {
-        return $this->state(fn(array $attributes) => [
-            'transaction_type' => Transaction::TYPE_DEPOSIT,
-            'competition_id' => null,
-            'amount' => fake()->randomFloat(2, 10, 500),
-        ]);
-    }
-
-    /**
-     * Define a withdrawal transaction.
-     *
-     * @return \Illuminate\Database\Eloquent\Factories\Factory
-     */
-    public function withdrawal(): Factory
-    {
-        return $this->state(fn(array $attributes) => [
-            'transaction_type' => Transaction::TYPE_WITHDRAWAL,
-            'competition_id' => null,
-            'amount' => fake()->randomFloat(2, 10, 300),
-        ]);
     }
 
     /**

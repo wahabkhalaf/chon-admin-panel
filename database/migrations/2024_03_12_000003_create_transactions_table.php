@@ -16,8 +16,6 @@ return new class extends Migration {
             $table->unsignedBigInteger('competition_id')->nullable();
             $table->decimal('amount', 10, 2);
             $table->enum('transaction_type', [
-                'deposit',
-                'withdrawal',
                 'entry_fee',
                 'prize',
                 'bonus',

@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\PaymentMethod;
 use App\Models\Player;
-use App\Models\PlayerWallet;
 use App\Models\Transaction;
 use App\Models\TransactionLog;
 use Illuminate\Database\Seeder;
@@ -36,40 +35,7 @@ class TransactionSeeder extends Seeder
         $depositMethods = $paymentMethods->filter(fn($method) => $method->supports_deposit)->values();
         $withdrawalMethods = $paymentMethods->filter(fn($method) => $method->supports_withdrawal)->values();
 
-        // Create wallets for players
         foreach ($players as $player) {
-            // Create wallet if it doesn't exist
-            PlayerWallet::firstOrCreate(
-                ['player_id' => $player->id],
-                ['balance' => 0]
-            );
-
-            // Create some deposit transactions
-            Transaction::factory()
-                ->deposit()
-                ->completed()
-                ->count(rand(1, 5))
-                ->create([
-                    'player_id' => $player->id,
-                    'payment_method' => $this->getRandomPaymentMethod($depositMethods, 'deposit'),
-                    'payment_provider' => $this->getRandomPaymentProvider(),
-                    'payment_details' => $this->getRandomPaymentDetails(),
-                ]);
-
-            // Create some withdrawal transactions
-            if (rand(0, 1)) {
-                Transaction::factory()
-                    ->withdrawal()
-                    ->completed()
-                    ->count(rand(1, 3))
-                    ->create([
-                        'player_id' => $player->id,
-                        'payment_method' => $this->getRandomPaymentMethod($withdrawalMethods, 'withdrawal'),
-                        'payment_provider' => $this->getRandomPaymentProvider(),
-                        'payment_details' => $this->getRandomPaymentDetails(),
-                    ]);
-            }
-
             // Create some entry fee transactions
             Transaction::factory()
                 ->entryFee()
@@ -77,6 +43,9 @@ class TransactionSeeder extends Seeder
                 ->count(rand(2, 8))
                 ->create([
                     'player_id' => $player->id,
+                    'payment_method' => $this->getRandomPaymentMethod($depositMethods, 'deposit'),
+                    'payment_provider' => $this->getRandomPaymentProvider(),
+                    'payment_details' => $this->getRandomPaymentDetails(),
                 ]);
 
             // Create some prize transactions
@@ -131,18 +100,6 @@ class TransactionSeeder extends Seeder
                         'created_at' => $transaction->updated_at ?? now(),
                     ]);
             }
-        }
-
-        // Update wallet balances based on completed transactions
-        foreach ($players as $player) {
-            $balance = $player->transactions()
-                ->where('status', Transaction::STATUS_COMPLETED)
-                ->get()
-                ->sum(function ($transaction) {
-                    return $transaction->getSignedAmount();
-                });
-
-            $player->wallet()->update(['balance' => $balance]);
         }
     }
 

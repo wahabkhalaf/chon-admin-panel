@@ -67,8 +67,6 @@ class Transaction extends Model
     /**
      * Transaction types
      */
-    const TYPE_DEPOSIT = 'deposit';
-    const TYPE_WITHDRAWAL = 'withdrawal';
     const TYPE_ENTRY_FEE = 'entry_fee';
     const TYPE_PRIZE = 'prize';
     const TYPE_BONUS = 'bonus';
@@ -116,22 +114,6 @@ class Transaction extends Model
     }
 
     /**
-     * Scope a query to only include deposits.
-     */
-    public function scopeDeposits($query)
-    {
-        return $query->where('transaction_type', self::TYPE_DEPOSIT);
-    }
-
-    /**
-     * Scope a query to only include withdrawals.
-     */
-    public function scopeWithdrawals($query)
-    {
-        return $query->where('transaction_type', self::TYPE_WITHDRAWAL);
-    }
-
-    /**
      * Scope a query to only include entry fees.
      */
     public function scopeEntryFees($query)
@@ -161,22 +143,6 @@ class Transaction extends Model
     public function scopePending($query)
     {
         return $query->where('status', self::STATUS_PENDING);
-    }
-
-    /**
-     * Check if the transaction is a deposit.
-     */
-    public function isDeposit(): bool
-    {
-        return $this->transaction_type === self::TYPE_DEPOSIT;
-    }
-
-    /**
-     * Check if the transaction is a withdrawal.
-     */
-    public function isWithdrawal(): bool
-    {
-        return $this->transaction_type === self::TYPE_WITHDRAWAL;
     }
 
     /**
@@ -218,13 +184,8 @@ class Transaction extends Model
         if ($result) {
             $this->logAction('completed', $reason);
 
-            // Update player wallet if it's a financial transaction
-            if ($this->affectsWallet()) {
-                $this->updatePlayerWallet();
-            }
-
             // Update last_used_at for the payment method if applicable
-            if ($this->payment_method && ($this->isDeposit() || $this->isWithdrawal())) {
+            if ($this->payment_method) {
                 $playerPaymentMethod = PlayerPaymentMethod::where('player_id', $this->player_id)
                     ->whereHas('paymentMethod', function ($query) {
                         $query->where('code', $this->payment_method);
@@ -256,26 +217,11 @@ class Transaction extends Model
     }
 
     /**
-     * Check if this transaction affects the player's wallet balance.
-     */
-    public function affectsWallet(): bool
-    {
-        return in_array($this->transaction_type, [
-            self::TYPE_DEPOSIT,
-            self::TYPE_WITHDRAWAL,
-            self::TYPE_PRIZE,
-            self::TYPE_BONUS,
-            self::TYPE_REFUND,
-        ]) && $this->status === self::STATUS_COMPLETED;
-    }
-
-    /**
      * Get the amount with sign (positive or negative) based on transaction type.
      */
     public function getSignedAmount(): float
     {
         $positiveTypes = [
-            self::TYPE_DEPOSIT,
             self::TYPE_PRIZE,
             self::TYPE_BONUS,
             self::TYPE_REFUND,
@@ -284,16 +230,6 @@ class Transaction extends Model
         return in_array($this->transaction_type, $positiveTypes)
             ? (float) $this->amount
             : -1 * (float) $this->amount;
-    }
-
-    /**
-     * Update the player's wallet balance.
-     */
-    public function updatePlayerWallet(): void
-    {
-        $wallet = PlayerWallet::firstOrNew(['player_id' => $this->player_id]);
-        $wallet->balance += $this->getSignedAmount();
-        $wallet->save();
     }
 
     /**

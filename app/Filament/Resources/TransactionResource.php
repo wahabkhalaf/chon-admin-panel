@@ -50,8 +50,6 @@ class TransactionResource extends Resource
                             ->prefix('$'),
                         Forms\Components\Select::make('transaction_type')
                             ->options([
-                                Transaction::TYPE_DEPOSIT => 'Deposit',
-                                Transaction::TYPE_WITHDRAWAL => 'Withdrawal',
                                 Transaction::TYPE_ENTRY_FEE => 'Entry Fee',
                                 Transaction::TYPE_PRIZE => 'Prize',
                                 Transaction::TYPE_BONUS => 'Bonus',
@@ -85,11 +83,7 @@ class TransactionResource extends Resource
                             ->keyLabel('Field')
                             ->valueLabel('Value')
                             ->nullable(),
-                    ])
-                    ->visible(fn(callable $get) => in_array($get('transaction_type'), [
-                        Transaction::TYPE_DEPOSIT,
-                        Transaction::TYPE_WITHDRAWAL,
-                    ])),
+                    ]),
                 Forms\Components\Section::make('Additional Information')
                     ->schema([
                         Forms\Components\TextInput::make('reference_id')
@@ -135,8 +129,6 @@ class TransactionResource extends Resource
                 Tables\Columns\TextColumn::make('transaction_type')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
-                        Transaction::TYPE_DEPOSIT => 'success',
-                        Transaction::TYPE_WITHDRAWAL => 'danger',
                         Transaction::TYPE_ENTRY_FEE => 'warning',
                         Transaction::TYPE_PRIZE => 'success',
                         Transaction::TYPE_BONUS => 'info',
@@ -171,8 +163,6 @@ class TransactionResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('transaction_type')
                     ->options([
-                        Transaction::TYPE_DEPOSIT => 'Deposit',
-                        Transaction::TYPE_WITHDRAWAL => 'Withdrawal',
                         Transaction::TYPE_ENTRY_FEE => 'Entry Fee',
                         Transaction::TYPE_PRIZE => 'Prize',
                         Transaction::TYPE_BONUS => 'Bonus',

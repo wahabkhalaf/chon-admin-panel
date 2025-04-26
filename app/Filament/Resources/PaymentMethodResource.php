@@ -48,9 +48,11 @@ class PaymentMethodResource extends Resource
                 Forms\Components\Section::make('Transaction Support')
                     ->schema([
                         Forms\Components\Toggle::make('supports_deposit')
+                            ->label('Supports Competition Entry')
                             ->required()
                             ->default(true),
                         Forms\Components\Toggle::make('supports_withdrawal')
+                            ->label('Supports Prize Payout')
                             ->required()
                             ->default(false),
                         Forms\Components\TextInput::make('min_amount')
@@ -105,8 +107,10 @@ class PaymentMethodResource extends Resource
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean(),
                 Tables\Columns\IconColumn::make('supports_deposit')
+                    ->label('Supports Entry')
                     ->boolean(),
                 Tables\Columns\IconColumn::make('supports_withdrawal')
+                    ->label('Supports Payout')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('min_amount')
                     ->money('USD')

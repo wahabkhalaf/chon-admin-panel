@@ -64,14 +64,6 @@ class Player extends Model
     }
 
     /**
-     * Get the wallet for the player.
-     */
-    public function wallet(): HasOne
-    {
-        return $this->hasOne(PlayerWallet::class);
-    }
-
-    /**
      * Get the transactions for the player.
      */
     public function transactions(): HasMany
@@ -144,18 +136,6 @@ class Player extends Model
     }
 
     /**
-     * Get the player's wallet balance.
-     * If the wallet doesn't exist, it will be created with a zero balance.
-     * 
-     * @return float
-     */
-    public function getWalletBalance(): float
-    {
-        $wallet = $this->wallet()->firstOrCreate(['balance' => 0]);
-        return (float) $wallet->balance;
-    }
-
-    /**
      * Create a new transaction for this player.
      * 
      * @param float $amount The transaction amount
@@ -198,19 +178,14 @@ class Player extends Model
     /**
      * Get the default payment method for this player.
      * 
-     * @param string $transactionType The transaction type (deposit, withdrawal)
+     * @param string $transactionType The transaction type (entry_fee, prize, etc.)
      * @return PlayerPaymentMethod|null
      */
-    public function getDefaultPaymentMethod(string $transactionType = 'deposit'): ?PlayerPaymentMethod
+    public function getDefaultPaymentMethod(): ?PlayerPaymentMethod
     {
         return $this->paymentMethods()
             ->where('is_default', true)
-            ->whereHas('paymentMethod', function ($query) use ($transactionType) {
-                if ($transactionType === 'deposit') {
-                    $query->where('supports_deposit', true);
-                } elseif ($transactionType === 'withdrawal') {
-                    $query->where('supports_withdrawal', true);
-                }
+            ->whereHas('paymentMethod', function ($query) {
                 $query->where('is_active', true);
             })
             ->first();
@@ -219,18 +194,12 @@ class Player extends Model
     /**
      * Get available payment methods for this player.
      * 
-     * @param string $transactionType The transaction type (deposit, withdrawal)
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function getAvailablePaymentMethods(string $transactionType = 'deposit')
+    public function getAvailablePaymentMethods()
     {
         return $this->paymentMethods()
-            ->whereHas('paymentMethod', function ($query) use ($transactionType) {
-                if ($transactionType === 'deposit') {
-                    $query->where('supports_deposit', true);
-                } elseif ($transactionType === 'withdrawal') {
-                    $query->where('supports_withdrawal', true);
-                }
+            ->whereHas('paymentMethod', function ($query) {
                 $query->where('is_active', true);
             })
             ->get();
@@ -255,19 +224,23 @@ class Player extends Model
         ?array $details = null,
         bool $setAsDefault = false
     ): PlayerPaymentMethod {
-        $playerPaymentMethod = $this->paymentMethods()->create([
+        $paymentMethod = $this->paymentMethods()->create([
             'payment_method_id' => $paymentMethodId,
             'token' => $token,
             'external_id' => $externalId,
             'nickname' => $nickname,
             'details' => $details,
             'is_default' => $setAsDefault,
+            'last_used_at' => now(),
         ]);
 
+        // If set as default, unset any other default methods
         if ($setAsDefault) {
-            $playerPaymentMethod->setAsDefault();
+            $this->paymentMethods()
+                ->where('id', '!=', $paymentMethod->id)
+                ->update(['is_default' => false]);
         }
 
-        return $playerPaymentMethod;
+        return $paymentMethod;
     }
 }
