@@ -94,7 +94,7 @@ class QuestionResource extends Resource
                                                 }
                                             }
 
-                                            // If no correct option exists, show error notification
+                                            // If no correct option exists, force this option to remain correct
                                             if (!$hasCorrectOption) {
                                                 $set("options.{$currentIndex}.is_correct", true);
                                                 Notification::make()
@@ -157,7 +157,7 @@ class QuestionResource extends Resource
                                 $questionType = $get('question_type');
                                 // Only require correct_answer for specific question types
                                 return in_array($questionType, [
-                                    'multi_choice',
+                                    //  'multi_choice',
                                     'puzzle',
                                     'pattern_recognition',
                                     'true_false',
