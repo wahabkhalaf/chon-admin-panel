@@ -61,7 +61,7 @@ CREATE TABLE competitions (
 -- Each tier defines:
 -- What type of prize (cash, item, points).
 -- How much prize value to give.
-    
+
 -- PRIZE TIERS
 CREATE TABLE prize_tiers (
     id SERIAL PRIMARY KEY,
@@ -92,17 +92,17 @@ CREATE TABLE competitions_questions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- USER ANSWERS
-CREATE TABLE user_answers (
+-- COMPETITION PLAYER ANSWERS
+CREATE TABLE competition_player_answers (
     id SERIAL PRIMARY KEY,
     player_id INT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
     competition_id INT NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
     question_id INT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
-    user_answer TEXT NOT NULL,
+    player_answer TEXT NOT NULL,
+    correct_answer TEXT NOT NULL,
     is_correct BOOLEAN NOT NULL,
     answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
 -- SESSION LEADERBOARD
 CREATE TABLE session_leaderboard (
     id SERIAL PRIMARY KEY,
