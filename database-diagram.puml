@@ -56,7 +56,12 @@ CREATE TABLE competitions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
+-- The prize_tiers table defines how the total prize pool of a competition is distributed based on player ranking.
+-- Each tier covers a range of ranks (e.g., 1st place, 2nd–3rd place, 4th–10th place).
+-- Each tier defines:
+-- What type of prize (cash, item, points).
+-- How much prize value to give.
+    
 -- PRIZE TIERS
 CREATE TABLE prize_tiers (
     id SERIAL PRIMARY KEY,
