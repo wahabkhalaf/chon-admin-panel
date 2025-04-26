@@ -176,4 +176,11 @@ class Competition extends Model
             ->withTimestamps();
     }
 
+    /**
+     * Get the player answers for this competition.
+     */
+    public function competitionPlayerAnswers()
+    {
+        return $this->hasMany(CompetitionPlayerAnswer::class, 'competition_id');
+    }
 }
