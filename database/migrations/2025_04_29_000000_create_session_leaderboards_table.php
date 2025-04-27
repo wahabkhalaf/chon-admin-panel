@@ -30,6 +30,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('session_leaderboards');
+        Schema::dropIfExists('competition_leaderboards');
     }
 };

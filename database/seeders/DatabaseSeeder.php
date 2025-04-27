@@ -14,28 +14,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
+        // Create admin user if it doesn't exist
         User::firstOrCreate(
             ['email' => 'test@example.com'],
             [
                 'name' => 'Test User',
                 'email' => 'test@example.com',
                 'password' => Hash::make('password'),
-
             ]
         );
 
-        $this->call([
-            CompetitionSeeder::class,
-            PaymentMethodSeeder::class,
-            PlayerSeeder::class,
-            TransactionSeeder::class,
-                // ...other seeders...
-            QuestionSeeder::class,
-            CompetitionPlayerAnswerSeeder::class,
-            CompetitionLeaderboardSeeder::class,
-            PrizeTierSeeder::class,
-        ]);
+        // Run the comprehensive competition seeder
+        // This will handle checking if prerequisite data exists
+        // and only seed what's needed
+        $this->call(CompetitionFullSeeder::class);
     }
 }
