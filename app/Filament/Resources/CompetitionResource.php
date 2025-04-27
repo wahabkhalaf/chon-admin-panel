@@ -274,7 +274,6 @@ class CompetitionResource extends Resource
             PrizeTiersRelationManager::class,
             CompetitionPlayerAnswersRelationManager::class,
             CompetitionLeaderboardRelationManager::class,
-           
         ];
     }
 
