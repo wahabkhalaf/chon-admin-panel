@@ -47,6 +47,7 @@ class PrizeTiersRelationManager extends RelationManager
                             ->required()
                             ->options(PrizeTier::PRIZE_TYPES)
                             ->default('cash')
+                            ->reactive()
                             ->label('Prize Type'),
                         Forms\Components\TextInput::make('prize_value')
                             ->required()
@@ -59,7 +60,45 @@ class PrizeTiersRelationManager extends RelationManager
                                     'points' => 'Points Amount',
                                     default => 'Prize Value',
                                 };
-                            }),
+                            })
+                            ->visible(fn(Forms\Get $get) => $get('prize_type') !== 'item'),
+
+                        // Item Details Section (only visible for item prizes)
+                        Forms\Components\Section::make('Item Details')
+                            ->schema([
+                                Forms\Components\Select::make('item_details.type')
+                                    ->label('Item Type')
+                                    ->options(PrizeTier::ITEM_TYPES)
+                                    ->default('other')
+                                    ->required(),
+
+                                Forms\Components\TextInput::make('item_details.name')
+                                    ->label('Item Name')
+                                    ->placeholder('e.g., iPhone 15 Pro, Honda Civic, etc.')
+                                    ->required()
+                                    ->helperText('Specific name or description of the item'),
+
+                                Forms\Components\TextInput::make('item_details.quantity')
+                                    ->label('Quantity')
+                                    ->numeric()
+                                    ->default(1)
+                                    ->minValue(1)
+                                    ->required(),
+
+                                Forms\Components\TextInput::make('item_details.estimated_value')
+                                    ->label('Estimated Value (IQD)')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->helperText('Optional: approximate monetary value'),
+
+                                Forms\Components\Textarea::make('item_details.description')
+                                    ->label('Additional Details')
+                                    ->placeholder('Color, model, specifications, etc.')
+                                    ->rows(3)
+                                    ->columnSpanFull(),
+                            ])
+                            ->visible(fn(Forms\Get $get) => $get('prize_type') === 'item')
+                            ->columns(2),
                     ]),
             ]);
     }

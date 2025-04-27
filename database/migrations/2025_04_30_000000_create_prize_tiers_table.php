@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->integer('rank_to');
             $table->enum('prize_type', ['cash', 'item', 'points']);
             $table->decimal('prize_value', 10, 2);
+            $table->json('item_details')->nullable();
             $table->timestamps();
 
             // Add index for faster queries
