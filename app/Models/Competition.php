@@ -187,7 +187,7 @@ class Competition extends Model
     /**
      * Get the leaderboard entries for this competition.
      */
-    public function sessionLeaderboard()
+    public function competitionLeaderboard()
     {
         return $this->hasMany(CompetitionLeaderboard::class, 'competition_id');
     }

@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CompetitionLeaderboardRelationManager extends RelationManager
 {
-    protected static string $relationship = 'sessionLeaderboard';
+    protected static string $relationship = 'competitionLeaderboard';
 
     protected static ?string $title = 'Competition Leaderboard';
 

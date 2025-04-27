@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Competition;
 use App\Models\Player;
-use App\Models\SessionLeaderboard;
+use App\Models\CompetitionLeaderboard;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -48,7 +48,7 @@ class CompetitionLeaderboardSeeder extends Seeder
                 // Assign ranks and create leaderboard entries
                 $rank = 1;
                 foreach ($scores as $playerId => $score) {
-                    SessionLeaderboard::create([
+                    CompetitionLeaderboard::create([
                         'competition_id' => $competition->id,
                         'player_id' => $playerId,
                         'score' => $score,

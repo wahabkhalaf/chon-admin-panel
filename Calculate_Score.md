@@ -105,8 +105,6 @@ Step	Action
 4	Rank players
 5	Assign prizes using prize_tiers
 
-
-
 ⸻
 
 🚀 Bonus Idea for Later:
