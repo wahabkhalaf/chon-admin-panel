@@ -3,15 +3,189 @@
 namespace App\Filament\Resources\CompetitionResource\Pages;
 
 use App\Filament\Resources\CompetitionResource;
+use App\Models\Player;
 use Filament\Actions;
+use Filament\Forms\Components\Section;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\Group;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Enums\ActionSize;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class EditCompetition extends EditRecord
 {
     protected static string $resource = CompetitionResource::class;
+
+    public function infolist(Infolist $infolist): Infolist
+    {
+        $stats = $this->getCompetitionStats();
+
+        return $infolist
+            ->schema([
+                Section::make('Competition Statistics')
+                    ->columns(3)
+                    ->schema([
+                        TextEntry::make('total_players')
+                            ->label('Total Players')
+                            ->state($stats['total_players'])
+                            ->color('primary')
+                            ->size('lg')
+                            ->icon('heroicon-o-users'),
+
+                        TextEntry::make('total_correct_answers')
+                            ->label('Total Correct Answers')
+                            ->state($stats['total_correct_answers'])
+                            ->color('success')
+                            ->size('lg')
+                            ->icon('heroicon-o-check-circle'),
+
+                        TextEntry::make('average_score')
+                            ->label('Average Score')
+                            ->state($stats['average_score'])
+                            ->color('info')
+                            ->size('lg')
+                            ->icon('heroicon-o-chart-bar'),
+
+                        Grid::make()
+                            ->schema([
+                                TextEntry::make('highest_score')
+                                    ->label('Highest Score')
+                                    ->state($stats['highest_score'])
+                                    ->color('success')
+                                    ->icon('heroicon-o-arrow-trending-up'),
+
+                                TextEntry::make('lowest_score')
+                                    ->label('Lowest Score')
+                                    ->state($stats['lowest_score'])
+                                    ->color('danger')
+                                    ->icon('heroicon-o-arrow-trending-down'),
+                            ]),
+                    ]),
+
+                Section::make('Top Player')
+                    ->visible(fn() => !empty($stats['top_player_id']))
+                    ->columns(4)
+                    ->schema([
+                        TextEntry::make('top_player_name')
+                            ->label('Player Name')
+                            ->state($stats['top_player_name'])
+                            ->color('primary')
+                            ->icon('heroicon-o-trophy'),
+
+                        TextEntry::make('total_competitions_joined')
+                            ->label('Total Competitions')
+                            ->state($stats['top_player_stats']['total_competitions_joined'] ?? 0)
+                            ->color('primary')
+                            ->icon('heroicon-o-flag'),
+
+                        TextEntry::make('total_score')
+                            ->label('Total Score')
+                            ->state($stats['top_player_stats']['total_score'] ?? 0)
+                            ->color('success')
+                            ->icon('heroicon-o-star'),
+
+                        TextEntry::make('total_wins')
+                            ->label('Total Wins')
+                            ->state($stats['top_player_stats']['total_wins'] ?? 0)
+                            ->color('warning')
+                            ->icon('heroicon-o-fire'),
+                    ]),
+            ]);
+    }
+
+    // Calculate competition statistics
+    private function getCompetitionStats(): array
+    {
+        $competition = $this->record;
+
+        // Calculate total players who joined this competition
+        $totalPlayers = DB::table('transactions')
+            ->where('competition_id', $competition->id)
+            ->where('status', '=', 'completed')
+            ->select('player_id')
+            ->distinct()
+            ->count();
+
+        // Calculate total correct answers
+        $totalCorrectAnswers = DB::table('competition_player_answers')
+            ->where('competition_id', $competition->id)
+            ->where('is_correct', true)
+            ->count();
+
+        // Calculate average score
+        $averageScore = DB::table('competition_leaderboards')
+            ->where('competition_id', $competition->id)
+            ->avg('score') ?? 0;
+
+        // Get highest score
+        $highestScore = DB::table('competition_leaderboards')
+            ->where('competition_id', $competition->id)
+            ->max('score') ?? 0;
+
+        // Get lowest score
+        $lowestScore = DB::table('competition_leaderboards')
+            ->where('competition_id', $competition->id)
+            ->min('score') ?? 0;
+
+        // Get top player
+        $topPlayer = DB::table('competition_leaderboards')
+            ->where('competition_id', $competition->id)
+            ->orderBy('score', 'desc')
+            ->select('player_id')
+            ->first();
+
+        $topPlayerId = $topPlayer ? $topPlayer->player_id : null;
+
+        // Get top player details if available
+        $topPlayerName = null;
+        $topPlayerStats = [];
+
+        if ($topPlayerId) {
+            $playerInfo = Player::find($topPlayerId);
+            $topPlayerName = $playerInfo ? $playerInfo->nickname : 'Unknown';
+
+            // Calculate player stats
+            // Total competitions joined by player
+            $totalCompetitionsJoined = DB::table('transactions')
+                ->where('player_id', $topPlayerId)
+                ->where('status', '=', 'completed')
+                ->select('competition_id')
+                ->distinct()
+                ->count();
+
+            // Total score across all competitions
+            $totalScore = DB::table('competition_leaderboards')
+                ->where('player_id', $topPlayerId)
+                ->sum('score') ?? 0;
+
+            // Total wins (rank 1)
+            $totalWins = DB::table('competition_leaderboards')
+                ->where('player_id', $topPlayerId)
+                ->where('rank', 1)
+                ->count();
+
+            $topPlayerStats = [
+                'total_competitions_joined' => $totalCompetitionsJoined,
+                'total_score' => $totalScore,
+                'total_wins' => $totalWins,
+            ];
+        }
+
+        return [
+            'total_players' => $totalPlayers,
+            'total_correct_answers' => $totalCorrectAnswers,
+            'average_score' => round($averageScore, 2),
+            'highest_score' => $highestScore,
+            'lowest_score' => $lowestScore,
+            'top_player_id' => $topPlayerId,
+            'top_player_name' => $topPlayerName,
+            'top_player_stats' => $topPlayerStats,
+        ];
+    }
 
     public function getContentTabLabel(): string|null
     {
@@ -38,7 +212,7 @@ class EditCompetition extends EditRecord
         };
 
         return [
-          
+
             Actions\Action::make('status')
                 ->label($statusLabel)
                 ->color($statusColor)
@@ -198,7 +372,6 @@ class EditCompetition extends EditRecord
     protected function getHeaderWidgets(): array
     {
         return [
-            // You can add widgets here if needed
         ];
     }
     // make reations a tab
