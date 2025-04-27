@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Competition;
-use App\Models\Player;
 use App\Models\CompetitionLeaderboard;
+use App\Models\Player;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 

@@ -35,6 +35,7 @@ class DatabaseSeeder extends Seeder
             QuestionSeeder::class,
             CompetitionPlayerAnswerSeeder::class,
             CompetitionLeaderboardSeeder::class,
+            PrizeTierSeeder::class,
         ]);
     }
 }

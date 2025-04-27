@@ -191,4 +191,12 @@ class Competition extends Model
     {
         return $this->hasMany(CompetitionLeaderboard::class, 'competition_id');
     }
+
+    /**
+     * Get the prize tiers for this competition.
+     */
+    public function prizeTiers()
+    {
+        return $this->hasMany(PrizeTier::class, 'competition_id')->orderBy('rank_from');
+    }
 }

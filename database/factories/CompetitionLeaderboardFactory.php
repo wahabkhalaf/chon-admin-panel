@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\Competition;
-use App\Models\Player;
 use App\Models\CompetitionLeaderboard;
+use App\Models\Player;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

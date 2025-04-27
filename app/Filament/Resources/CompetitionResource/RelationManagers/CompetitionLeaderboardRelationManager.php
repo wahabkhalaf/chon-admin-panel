@@ -43,6 +43,11 @@ class CompetitionLeaderboardRelationManager extends RelationManager
                         'primary' => fn($state) => $state === 3,
                         'secondary' => fn($state) => $state > 3,
                     ]),
+                Tables\Columns\TextColumn::make('score')
+                    ->formatStateUsing(function ($state, $record) {
+                        return $record->getPrizeDescription() ?? 'No Prize';
+                    })
+                    ->label('Prize'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Created At')
                     ->dateTime(),

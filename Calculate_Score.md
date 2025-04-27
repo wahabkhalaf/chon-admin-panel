@@ -69,9 +69,9 @@ Result:
 	•	Correct Answers = 7
 	•	Final Score = 7
 
-Then you insert into session_leaderboard:
+Then you insert into competition_leaderboard:
 
-INSERT INTO session_leaderboard (player_id, competition_id, score, rank)
+INSERT INTO competition_leaderboard (player_id, competition_id, score, rank)
 VALUES (:playerId, :competitionId, 7, NULL);
 
 Later, you assign the rank after sorting all players by their score (highest first).
@@ -86,7 +86,7 @@ Later, you assign the rank after sorting all players by their score (highest fir
 Example:
 
 SELECT player_id, score 
-FROM session_leaderboard 
+FROM competition_leaderboard 
 WHERE competition_id = :competitionId
 ORDER BY score DESC;
 
@@ -101,7 +101,7 @@ Then assign:
 Step	Action
 1	Player answers stored in user_answers
 2	Count correct answers = score
-3	Save score into session_leaderboard
+3	Save score into competition_leaderboard
 4	Rank players
 5	Assign prizes using prize_tiers
 

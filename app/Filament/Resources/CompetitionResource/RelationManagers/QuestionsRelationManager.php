@@ -24,7 +24,7 @@ class QuestionsRelationManager extends RelationManager
 
     protected static ?string $recordTitleAttribute = 'question_text';
 
-    protected static ?string $title = 'Competition Questions';
+    protected static ?string $title = 'Questions';
 
     public function form(Form $form): Form
     {

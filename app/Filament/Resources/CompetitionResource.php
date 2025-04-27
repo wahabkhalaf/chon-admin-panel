@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\CompetitionResource\Pages;
 use App\Filament\Resources\CompetitionResource\RelationManagers\CompetitionLeaderboardRelationManager;
 use App\Filament\Resources\CompetitionResource\RelationManagers\CompetitionPlayerAnswersRelationManager;
+use App\Filament\Resources\CompetitionResource\RelationManagers\PrizeTiersRelationManager;
 use App\Filament\Resources\CompetitionResource\RelationManagers\QuestionsRelationManager;
 use App\Filament\Resources\CompetitionResource\Widgets\CompetitionStats;
 use App\Models\Competition;
@@ -272,6 +273,7 @@ class CompetitionResource extends Resource
             QuestionsRelationManager::class,
             CompetitionPlayerAnswersRelationManager::class,
             CompetitionLeaderboardRelationManager::class,
+            PrizeTiersRelationManager::class,
         ];
     }
 

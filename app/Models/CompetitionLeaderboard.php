@@ -48,4 +48,29 @@ class CompetitionLeaderboard extends Model
     {
         return $this->belongsTo(Player::class);
     }
+
+    /**
+     * Get the prize tier that matches this leaderboard entry's rank.
+     */
+    public function getPrizeTier()
+    {
+        return $this->competition->prizeTiers()
+            ->where('rank_from', '<=', $this->rank)
+            ->where('rank_to', '>=', $this->rank)
+            ->first();
+    }
+
+    /**
+     * Get a human-readable description of the prize for this rank.
+     */
+    public function getPrizeDescription(): ?string
+    {
+        $prizeTier = $this->getPrizeTier();
+
+        if (!$prizeTier) {
+            return null;
+        }
+
+        return $prizeTier->getPrizeDescription();
+    }
 }
