@@ -27,7 +27,6 @@ class Transaction extends Model
         'player_id',
         'competition_id',
         'amount',
-        'transaction_type',
         'status',
         'payment_method',
         'payment_provider',
@@ -65,21 +64,11 @@ class Transaction extends Model
     public $timestamps = false;
 
     /**
-     * Transaction types
-     */
-    const TYPE_ENTRY_FEE = 'entry_fee';
-    const TYPE_PRIZE = 'prize';
-    const TYPE_BONUS = 'bonus';
-    const TYPE_REFUND = 'refund';
-
-    /**
      * Transaction statuses
      */
     const STATUS_PENDING = 'pending';
     const STATUS_COMPLETED = 'completed';
     const STATUS_FAILED = 'failed';
-    const STATUS_CANCELLED = 'cancelled';
-    const STATUS_REFUNDED = 'refunded';
 
     /**
      * Get the player that owns the transaction.
@@ -114,22 +103,6 @@ class Transaction extends Model
     }
 
     /**
-     * Scope a query to only include entry fees.
-     */
-    public function scopeEntryFees($query)
-    {
-        return $query->where('transaction_type', self::TYPE_ENTRY_FEE);
-    }
-
-    /**
-     * Scope a query to only include prizes.
-     */
-    public function scopePrizes($query)
-    {
-        return $query->where('transaction_type', self::TYPE_PRIZE);
-    }
-
-    /**
      * Scope a query to only include completed transactions.
      */
     public function scopeCompleted($query)
@@ -146,6 +119,14 @@ class Transaction extends Model
     }
 
     /**
+     * Scope a query to only include failed transactions.
+     */
+    public function scopeFailed($query)
+    {
+        return $query->where('status', self::STATUS_FAILED);
+    }
+
+    /**
      * Check if the transaction is completed.
      */
     public function isCompleted(): bool
@@ -159,6 +140,14 @@ class Transaction extends Model
     public function isPending(): bool
     {
         return $this->status === self::STATUS_PENDING;
+    }
+
+    /**
+     * Check if the transaction has failed.
+     */
+    public function isFailed(): bool
+    {
+        return $this->status === self::STATUS_FAILED;
     }
 
     /**
@@ -214,22 +203,6 @@ class Transaction extends Model
         }
 
         return $result;
-    }
-
-    /**
-     * Get the amount with sign (positive or negative) based on transaction type.
-     */
-    public function getSignedAmount(): float
-    {
-        $positiveTypes = [
-            self::TYPE_PRIZE,
-            self::TYPE_BONUS,
-            self::TYPE_REFUND,
-        ];
-
-        return in_array($this->transaction_type, $positiveTypes)
-            ? (float) $this->amount
-            : -1 * (float) $this->amount;
     }
 
     /**

@@ -28,54 +28,18 @@ class TransactionFactory extends Factory
     {
         return [
             'player_id' => Player::factory(),
-            'competition_id' => fake()->boolean(70) ? Competition::factory() : null,
-            'amount' => fake()->randomFloat(2, 5, 1000),
-            'transaction_type' => fake()->randomElement([
-                Transaction::TYPE_ENTRY_FEE,
-                Transaction::TYPE_PRIZE,
-                Transaction::TYPE_BONUS,
-                Transaction::TYPE_REFUND,
-            ]),
+            'competition_id' => Competition::factory(),
+            'amount' => fake()->randomFloat(2, 5, 50),
             'status' => fake()->randomElement([
                 Transaction::STATUS_PENDING,
                 Transaction::STATUS_COMPLETED,
                 Transaction::STATUS_FAILED,
-                Transaction::STATUS_CANCELLED,
-                Transaction::STATUS_REFUNDED,
             ]),
             'reference_id' => fake()->boolean(80) ? fake()->uuid() : null,
             'notes' => fake()->boolean(60) ? fake()->sentence() : null,
             'created_at' => fake()->dateTimeBetween('-1 year', 'now'),
             'updated_at' => fake()->boolean(70) ? fake()->dateTimeBetween('-1 month', 'now') : null,
         ];
-    }
-
-    /**
-     * Define an entry fee transaction.
-     *
-     * @return \Illuminate\Database\Eloquent\Factories\Factory
-     */
-    public function entryFee(): Factory
-    {
-        return $this->state(fn(array $attributes) => [
-            'transaction_type' => Transaction::TYPE_ENTRY_FEE,
-            'competition_id' => Competition::factory(),
-            'amount' => fake()->randomFloat(2, 5, 50),
-        ]);
-    }
-
-    /**
-     * Define a prize transaction.
-     *
-     * @return \Illuminate\Database\Eloquent\Factories\Factory
-     */
-    public function prize(): Factory
-    {
-        return $this->state(fn(array $attributes) => [
-            'transaction_type' => Transaction::TYPE_PRIZE,
-            'competition_id' => Competition::factory(),
-            'amount' => fake()->randomFloat(2, 20, 1000),
-        ]);
     }
 
     /**
@@ -101,6 +65,19 @@ class TransactionFactory extends Factory
         return $this->state(fn(array $attributes) => [
             'status' => Transaction::STATUS_PENDING,
             'updated_at' => null,
+        ]);
+    }
+
+    /**
+     * Define a failed transaction.
+     *
+     * @return \Illuminate\Database\Eloquent\Factories\Factory
+     */
+    public function failed(): Factory
+    {
+        return $this->state(fn(array $attributes) => [
+            'status' => Transaction::STATUS_FAILED,
+            'updated_at' => fake()->dateTimeBetween('-1 month', 'now'),
         ]);
     }
 }

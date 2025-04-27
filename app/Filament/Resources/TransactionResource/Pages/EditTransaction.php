@@ -27,9 +27,10 @@ class EditTransaction extends EditRecord
         // Log the update action
         $this->record->logAction('updated', 'Updated via admin panel');
 
-        // If the status was changed to completed, update the player's wallet
-        if ($this->record->isDirty('status') && $this->record->isCompleted() && $this->record->affectsWallet()) {
-            $this->record->updatePlayerWallet();
+        // If the status was changed to completed, perform any necessary actions
+        if ($this->record->isDirty('status') && $this->record->isCompleted()) {
+            // Competition entry fee has been paid
+            // You could add additional logic here if needed
         }
     }
 }

@@ -104,7 +104,7 @@ CREATE TABLE competition_player_answers (
     answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 -- COMPETITION LEADERBOARD
-CREATE TABLE competition_leaderboard (
+CREATE TABLE session_leaderboard (
     id SERIAL PRIMARY KEY,
     player_id INT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
     competition_id INT NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,

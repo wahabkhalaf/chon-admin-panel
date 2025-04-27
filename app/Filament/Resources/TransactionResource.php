@@ -21,11 +21,11 @@ class TransactionResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
 
-    protected static ?string $navigationLabel = 'Transactions';
+    protected static ?string $navigationLabel = 'Competition Entry Fees';
 
-    protected static ?string $navigationGroup = 'Transactions';
+    protected static ?string $navigationGroup = 'Competitions';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
@@ -42,27 +42,17 @@ class TransactionResource extends Resource
                             ->label('Competition')
                             ->options(Competition::all()->pluck('name', 'id'))
                             ->searchable()
-                            ->nullable(),
+                            ->required(),
                         Forms\Components\TextInput::make('amount')
                             ->required()
                             ->numeric()
                             ->minValue(0)
                             ->prefix('$'),
-                        Forms\Components\Select::make('transaction_type')
-                            ->options([
-                                Transaction::TYPE_ENTRY_FEE => 'Entry Fee',
-                                Transaction::TYPE_PRIZE => 'Prize',
-                                Transaction::TYPE_BONUS => 'Bonus',
-                                Transaction::TYPE_REFUND => 'Refund',
-                            ])
-                            ->required(),
                         Forms\Components\Select::make('status')
                             ->options([
                                 Transaction::STATUS_PENDING => 'Pending',
                                 Transaction::STATUS_COMPLETED => 'Completed',
                                 Transaction::STATUS_FAILED => 'Failed',
-                                Transaction::STATUS_CANCELLED => 'Cancelled',
-                                Transaction::STATUS_REFUNDED => 'Refunded',
                             ])
                             ->default(Transaction::STATUS_PENDING)
                             ->required(),
@@ -121,28 +111,16 @@ class TransactionResource extends Resource
                 Tables\Columns\TextColumn::make('competition.name')
                     ->label('Competition')
                     ->searchable()
-                    ->sortable()
-                    ->toggleable(),
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('amount')
                     ->money('USD')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('transaction_type')
-                    ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        Transaction::TYPE_ENTRY_FEE => 'warning',
-                        Transaction::TYPE_PRIZE => 'success',
-                        Transaction::TYPE_BONUS => 'info',
-                        Transaction::TYPE_REFUND => 'gray',
-                        default => 'gray',
-                    }),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         Transaction::STATUS_PENDING => 'warning',
                         Transaction::STATUS_COMPLETED => 'success',
                         Transaction::STATUS_FAILED => 'danger',
-                        Transaction::STATUS_CANCELLED => 'gray',
-                        Transaction::STATUS_REFUNDED => 'info',
                         default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('payment_method')
@@ -161,20 +139,11 @@ class TransactionResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('transaction_type')
-                    ->options([
-                        Transaction::TYPE_ENTRY_FEE => 'Entry Fee',
-                        Transaction::TYPE_PRIZE => 'Prize',
-                        Transaction::TYPE_BONUS => 'Bonus',
-                        Transaction::TYPE_REFUND => 'Refund',
-                    ]),
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         Transaction::STATUS_PENDING => 'Pending',
                         Transaction::STATUS_COMPLETED => 'Completed',
                         Transaction::STATUS_FAILED => 'Failed',
-                        Transaction::STATUS_CANCELLED => 'Cancelled',
-                        Transaction::STATUS_REFUNDED => 'Refunded',
                     ]),
                 Tables\Filters\SelectFilter::make('player_id')
                     ->label('Player')

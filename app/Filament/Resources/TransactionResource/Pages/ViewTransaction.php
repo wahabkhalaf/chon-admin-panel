@@ -34,27 +34,16 @@ class ViewTransaction extends ViewRecord
                             ->label('Transaction ID'),
                         Infolists\Components\TextEntry::make('player.nickname')
                             ->label('Player'),
+                        Infolists\Components\TextEntry::make('competition.name')
+                            ->label('Competition'),
                         Infolists\Components\TextEntry::make('amount')
                             ->money('USD'),
-                        Infolists\Components\TextEntry::make('transaction_type')
-                            ->badge()
-                            ->color(fn(string $state): string => match ($state) {
-                                Transaction::TYPE_DEPOSIT => 'success',
-                                Transaction::TYPE_WITHDRAWAL => 'danger',
-                                Transaction::TYPE_ENTRY_FEE => 'warning',
-                                Transaction::TYPE_PRIZE => 'success',
-                                Transaction::TYPE_BONUS => 'info',
-                                Transaction::TYPE_REFUND => 'gray',
-                                default => 'gray',
-                            }),
                         Infolists\Components\TextEntry::make('status')
                             ->badge()
                             ->color(fn(string $state): string => match ($state) {
                                 Transaction::STATUS_PENDING => 'warning',
                                 Transaction::STATUS_COMPLETED => 'success',
                                 Transaction::STATUS_FAILED => 'danger',
-                                Transaction::STATUS_CANCELLED => 'gray',
-                                Transaction::STATUS_REFUNDED => 'info',
                                 default => 'gray',
                             }),
                         Infolists\Components\TextEntry::make('reference_id')

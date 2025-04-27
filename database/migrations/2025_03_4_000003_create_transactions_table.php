@@ -13,20 +13,12 @@ return new class extends Migration {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('player_id')->constrained('players')->onDelete('cascade');
-            $table->unsignedBigInteger('competition_id')->nullable();
+            $table->foreignId('competition_id')->constrained('competitions')->onDelete('cascade');
             $table->decimal('amount', 10, 2);
-            $table->enum('transaction_type', [
-                'entry_fee',
-                'prize',
-                'bonus',
-                'refund'
-            ]);
             $table->enum('status', [
                 'pending',
                 'completed',
-                'failed',
-                'cancelled',
-                'refunded'
+                'failed'
             ])->default('pending');
             $table->string('payment_method')->nullable(); // e.g., 'credit_card', 'paypal', 'bank_transfer'
             $table->string('payment_provider')->nullable(); // e.g., 'stripe', 'paypal', 'razorpay'

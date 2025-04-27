@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Competition;
 use App\Models\PaymentMethod;
 use App\Models\Player;
 use App\Models\Transaction;
@@ -23,6 +24,14 @@ class TransactionSeeder extends Seeder
             $players = Player::factory()->count(10)->create();
         }
 
+        // Get competitions
+        $competitions = Competition::all();
+        if ($competitions->isEmpty()) {
+            // Create some competitions if none exist
+            $this->call(CompetitionSeeder::class);
+            $competitions = Competition::all();
+        }
+
         // Get payment methods
         $paymentMethods = PaymentMethod::all();
         if ($paymentMethods->isEmpty()) {
@@ -33,41 +42,43 @@ class TransactionSeeder extends Seeder
 
         // Filter payment methods by type
         $depositMethods = $paymentMethods->filter(fn($method) => $method->supports_deposit)->values();
-        $withdrawalMethods = $paymentMethods->filter(fn($method) => $method->supports_withdrawal)->values();
 
         foreach ($players as $player) {
-            // Create some entry fee transactions
+            // Create completed transactions (successful entries)
             Transaction::factory()
-                ->entryFee()
                 ->completed()
-                ->count(rand(2, 8))
+                ->count(rand(2, 5))
                 ->create([
                     'player_id' => $player->id,
-                    'payment_method' => $this->getRandomPaymentMethod($depositMethods, 'deposit'),
+                    'competition_id' => $competitions->random()->id,
+                    'payment_method' => $this->getRandomPaymentMethod($depositMethods),
                     'payment_provider' => $this->getRandomPaymentProvider(),
                     'payment_details' => $this->getRandomPaymentDetails(),
                 ]);
 
-            // Create some prize transactions
-            if (rand(0, 1)) {
-                Transaction::factory()
-                    ->prize()
-                    ->completed()
-                    ->count(rand(1, 4))
-                    ->create([
-                        'player_id' => $player->id,
-                    ]);
-            }
-
-            // Create some pending transactions
+            // Create pending transactions
             Transaction::factory()
                 ->pending()
                 ->count(rand(0, 2))
                 ->create([
                     'player_id' => $player->id,
-                    'payment_method' => rand(0, 1) ? $this->getRandomPaymentMethod($depositMethods, 'deposit') : null,
+                    'competition_id' => $competitions->random()->id,
+                    'payment_method' => rand(0, 1) ? $this->getRandomPaymentMethod($depositMethods) : null,
                     'payment_provider' => rand(0, 1) ? $this->getRandomPaymentProvider() : null,
                 ]);
+
+            // Create failed transactions
+            if (rand(0, 1)) {
+                Transaction::factory()
+                    ->failed()
+                    ->count(rand(1, 2))
+                    ->create([
+                        'player_id' => $player->id,
+                        'competition_id' => $competitions->random()->id,
+                        'payment_method' => $this->getRandomPaymentMethod($depositMethods),
+                        'payment_provider' => $this->getRandomPaymentProvider(),
+                    ]);
+            }
         }
 
         // Create transaction logs for all transactions
@@ -92,7 +103,7 @@ class TransactionSeeder extends Seeder
             }
 
             // Create failure log for failed transactions
-            if ($transaction->status === Transaction::STATUS_FAILED) {
+            if ($transaction->isFailed()) {
                 TransactionLog::factory()
                     ->failure()
                     ->create([
@@ -107,10 +118,9 @@ class TransactionSeeder extends Seeder
      * Get a random payment method code.
      *
      * @param \Illuminate\Support\Collection $methods
-     * @param string $type
      * @return string|null
      */
-    private function getRandomPaymentMethod($methods, $type)
+    private function getRandomPaymentMethod($methods)
     {
         if ($methods->isEmpty()) {
             return null;
