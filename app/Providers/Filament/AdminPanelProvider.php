@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Widgets\StatsOverviewWidget;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -26,9 +27,9 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-             ->colors([
+            ->colors([
                 'primary' => [
-                    50  => '#f0fdfa',
+                    50 => '#f0fdfa',
                     100 => '#ccfbf1',
                     200 => '#99f6e4',
                     300 => '#5eead4',
@@ -40,7 +41,7 @@ class AdminPanelProvider extends PanelProvider
                     900 => '#134e4a',
                 ],
                 'secondary' => [
-                    50  => '#fdf2f8',
+                    50 => '#fdf2f8',
                     100 => '#fce7f3',
                     200 => '#fbcfe8',
                     300 => '#f9a8d4',
@@ -52,7 +53,7 @@ class AdminPanelProvider extends PanelProvider
                     900 => '#831843',
                 ],
                 'success' => [
-                    50  => '#f0fdf6',
+                    50 => '#f0fdf6',
                     100 => '#dcfce7',
                     200 => '#bbf7d0',
                     300 => '#86efac',
@@ -69,11 +70,12 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Pages\Dashboard::class,
             ])
-            
+
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-               // Widgets\FilamentInfoWidget::class,
+                StatsOverviewWidget::class,
+                // Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -87,8 +89,8 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->sidebarCollapsibleOnDesktop()
-           // ->sidebarWidth(70)
-          
+            // ->sidebarWidth(70)
+
             ->authMiddleware([
                 Authenticate::class,
             ]);
