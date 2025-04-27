@@ -183,4 +183,12 @@ class Competition extends Model
     {
         return $this->hasMany(CompetitionPlayerAnswer::class, 'competition_id');
     }
+
+    /**
+     * Get the leaderboard entries for this competition.
+     */
+    public function sessionLeaderboard()
+    {
+        return $this->hasMany(CompetitionLeaderboard::class, 'competition_id');
+    }
 }

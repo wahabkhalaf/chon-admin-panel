@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
                 // ...other seeders...
             QuestionSeeder::class,
             CompetitionPlayerAnswerSeeder::class,
+            CompetitionLeaderboardSeeder::class,
         ]);
     }
 }
