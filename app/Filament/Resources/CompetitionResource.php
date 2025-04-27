@@ -270,10 +270,11 @@ class CompetitionResource extends Resource
     public static function getRelations(): array
     {
         return [
-            QuestionsRelationManager::class,
+            QuestionsRelationManager::class, 
+            PrizeTiersRelationManager::class,
             CompetitionPlayerAnswersRelationManager::class,
             CompetitionLeaderboardRelationManager::class,
-            PrizeTiersRelationManager::class,
+           
         ];
     }
 
