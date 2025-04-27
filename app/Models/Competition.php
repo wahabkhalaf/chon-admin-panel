@@ -199,4 +199,12 @@ class Competition extends Model
     {
         return $this->hasMany(PrizeTier::class, 'competition_id')->orderBy('rank_from');
     }
+
+    /**
+     * Get the transactions for this competition.
+     */
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class, 'competition_id');
+    }
 }
