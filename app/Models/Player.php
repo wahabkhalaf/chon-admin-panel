@@ -29,6 +29,7 @@ class Player extends Model
         'total_score',
         'level',
         'experience_points',
+        'is_verified',
     ];
 
     /**
@@ -46,6 +47,7 @@ class Player extends Model
     protected $casts = [
         'joined_at' => 'datetime',
         'updated_at' => 'datetime',
+        'is_verified' => 'boolean',
     ];
 
     /**
