@@ -165,6 +165,90 @@ class QuestionResource extends Resource
                                 ]);
                             }),
                     ]),
+
+                Forms\Components\Section::make('Kurdish Translation')
+                    ->schema([
+                        Forms\Components\Textarea::make('question_text_kurdish')
+                            ->maxLength(1000)
+                            ->columnSpan(2)
+                            ->label('Question (Kurdish)'),
+
+                        // Multi-choice options in Kurdish
+                        Forms\Components\Repeater::make('options_kurdish')
+                            ->schema([
+                                Forms\Components\TextInput::make('option')
+                                    ->required(),
+                                Forms\Components\Toggle::make('is_correct')
+                                    ->required()
+                                    ->reactive()
+                                    ->afterStateUpdated(function ($state, callable $set, $livewire) {
+                                        if (!isset($livewire->data['options_kurdish'])) {
+                                            return;
+                                        }
+
+                                        // Get current repeater item
+                                        $currentIndex = array_key_last($livewire->data['options_kurdish']);
+
+                                        if ($state) {
+                                            // When marking an option as correct, set all others to false
+                                            foreach ($livewire->data['options_kurdish'] as $index => $option) {
+                                                if ($index !== $currentIndex) {
+                                                    $set("options_kurdish.{$index}.is_correct", false);
+                                                }
+                                            }
+
+                                            // Set the correct answer in Kurdish
+                                            if (isset($livewire->data['options_kurdish'][$currentIndex]['option'])) {
+                                                $set('correct_answer_kurdish', $livewire->data['options_kurdish'][$currentIndex]['option']);
+                                            }
+                                        } else {
+                                            // Check if any option is marked as correct
+                                            $hasCorrectOption = false;
+                                            foreach ($livewire->data['options_kurdish'] as $option) {
+                                                if (($option['is_correct'] ?? false) === true) {
+                                                    $hasCorrectOption = true;
+                                                    break;
+                                                }
+                                            }
+
+                                            // If no correct option exists, force this option to remain correct
+                                            if (!$hasCorrectOption) {
+                                                $set("options_kurdish.{$currentIndex}.is_correct", true);
+                                                Notification::make()
+                                                    ->warning()
+                                                    ->title('At least one Kurdish option must be marked as correct')
+                                                    ->send();
+                                            }
+                                        }
+                                    }),
+                            ])
+                            ->columns(2)
+                            ->minItems(2)
+                            ->maxItems(5)
+                            ->visible(fn(callable $get) => $get('question_type') === 'multi_choice')
+                            ->label('Answer Options (Kurdish)')
+                            ->rules(['array'])
+                            ->default([])
+                            ->live(),
+
+                        // Other answer types in Kurdish
+                        Forms\Components\TextInput::make('correct_answer_kurdish')
+                            ->visible(fn(callable $get) => in_array($get('question_type'), ['puzzle', 'pattern_recognition', 'math']))
+                            ->label('Correct Answer (Kurdish)'),
+
+                        // True/False answer in Kurdish
+                        Forms\Components\Select::make('true_false_answer_kurdish')
+                            ->options([
+                                'true' => 'True',
+                                'false' => 'False',
+                            ])
+                            ->visible(fn(callable $get) => $get('question_type') === 'true_false')
+                            ->reactive()
+                            ->afterStateUpdated(fn($state, callable $set) => $set('correct_answer_kurdish', $state))
+                            ->label('Correct Answer (Kurdish)'),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
             ]);
     }
 

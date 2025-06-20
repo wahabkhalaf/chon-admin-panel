@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\HasKurdishTranslation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Question extends Model
 {
-    use HasFactory;
+    use HasFactory, HasKurdishTranslation;
 
     /**
      * The attributes that are mass assignable.
@@ -17,9 +18,12 @@ class Question extends Model
      */
     protected $fillable = [
         'question_text',
+        'question_text_kurdish',
         'question_type',
         'options',
+        'options_kurdish',
         'correct_answer',
+        'correct_answer_kurdish',
         'level',
     ];
 
@@ -30,6 +34,7 @@ class Question extends Model
      */
     protected $casts = [
         'options' => 'array',
+        'options_kurdish' => 'array',
     ];
 
     /**

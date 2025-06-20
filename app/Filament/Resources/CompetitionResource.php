@@ -106,6 +106,21 @@ class CompetitionResource extends Resource
                             ->disabled(fn($record) => $record && !$record->canEditField('game_type')),
                     ]),
 
+                Forms\Components\Section::make('Kurdish Translation')
+                    ->schema([
+                        Forms\Components\TextInput::make('name_kurdish')
+                            ->maxLength(100)
+                            ->label('Name (Kurdish)')
+                            ->disabled(fn($record) => $record && !$record->canEditField('name')),
+                        Forms\Components\Textarea::make('description_kurdish')
+                            ->maxLength(65535)
+                            ->columnSpanFull()
+                            ->label('Description (Kurdish)')
+                            ->disabled(fn($record) => $record && !$record->canEditField('description')),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
+
                 Forms\Components\Section::make('Financial Details')
                     ->schema([
                         Forms\Components\TextInput::make('entry_fee')

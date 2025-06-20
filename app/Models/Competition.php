@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasKurdishTranslation;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,13 +22,15 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Competition extends Model
 {
-    use HasFactory;
+    use HasFactory, HasKurdishTranslation;
 
     // Competition uses auto-incrementing integer IDs
 
     protected $fillable = [
         'name',
+        'name_kurdish',
         'description',
+        'description_kurdish',
         'entry_fee',
         'open_time',
         'start_time',
