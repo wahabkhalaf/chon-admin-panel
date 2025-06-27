@@ -69,23 +69,18 @@ class QuestionResource extends Resource
                                             return;
                                         }
 
-                                        // Get current repeater item
                                         $currentIndex = array_key_last($livewire->data['options']);
 
                                         if ($state) {
-                                            // When marking an option as correct, set all others to false
                                             foreach ($livewire->data['options'] as $index => $option) {
                                                 if ($index !== $currentIndex) {
                                                     $set("options.{$index}.is_correct", false);
                                                 }
                                             }
-
-                                            // Set the correct answer
                                             if (isset($livewire->data['options'][$currentIndex]['option'])) {
                                                 $set('correct_answer', $livewire->data['options'][$currentIndex]['option']);
                                             }
                                         } else {
-                                            // Check if any option is marked as correct
                                             $hasCorrectOption = false;
                                             foreach ($livewire->data['options'] as $option) {
                                                 if (($option['is_correct'] ?? false) === true) {
@@ -93,8 +88,6 @@ class QuestionResource extends Resource
                                                     break;
                                                 }
                                             }
-
-                                            // If no correct option exists, force this option to remain correct
                                             if (!$hasCorrectOption) {
                                                 $set("options.{$currentIndex}.is_correct", true);
                                                 Notification::make()
@@ -110,7 +103,9 @@ class QuestionResource extends Resource
                             ->maxItems(5)
                             ->visible(fn(callable $get) => $get('question_type') === 'multi_choice')
                             ->label('Answer Options')
-                            ->rules(['array'])
+                            ->rules([
+                                'array',
+                            ])
                             ->default([])
                             ->live(),
 
@@ -155,14 +150,26 @@ class QuestionResource extends Resource
                         Forms\Components\Hidden::make('correct_answer')
                             ->required(function (callable $get) {
                                 $questionType = $get('question_type');
-                                // Only require correct_answer for specific question types
                                 return in_array($questionType, [
-                                    //  'multi_choice',
+                                    'multi_choice',
                                     'puzzle',
                                     'pattern_recognition',
                                     'true_false',
                                     'math'
                                 ]);
+                            })
+                            ->dehydrateStateUsing(function (callable $get) {
+                                $questionType = $get('question_type');
+                                if ($questionType === 'multi_choice') {
+                                    $options = $get('options') ?? [];
+                                    foreach ($options as $option) {
+                                        if (($option['is_correct'] ?? false) === true) {
+                                            return $option['option'] ?? null;
+                                        }
+                                    }
+                                    return null;
+                                }
+                                return $get('correct_answer');
                             }),
                     ]),
 
@@ -227,7 +234,9 @@ class QuestionResource extends Resource
                             ->maxItems(5)
                             ->visible(fn(callable $get) => $get('question_type') === 'multi_choice')
                             ->label('Answer Options (Kurdish)')
-                            ->rules(['array'])
+                            ->rules([
+                                'array',
+                            ])
                             ->default([])
                             ->live(),
 
@@ -246,6 +255,25 @@ class QuestionResource extends Resource
                             ->reactive()
                             ->afterStateUpdated(fn($state, callable $set) => $set('correct_answer_kurdish', $state))
                             ->label('Correct Answer (Kurdish)'),
+
+                        // Hidden field to store the correct answer in Kurdish
+                        Forms\Components\Hidden::make('correct_answer_kurdish')
+                            ->dehydrateStateUsing(function (callable $get) {
+                                $questionType = $get('question_type');
+
+                                // For multi-choice, get the correct answer from the Kurdish options
+                                if ($questionType === 'multi_choice') {
+                                    $optionsKurdish = $get('options_kurdish') ?? [];
+                                    foreach ($optionsKurdish as $option) {
+                                        if (($option['is_correct'] ?? false) === true) {
+                                            return $option['option'] ?? '';
+                                        }
+                                    }
+                                    return ''; // Return empty string if no correct option found
+                                }
+
+                                return $get('correct_answer_kurdish');
+                            }),
                     ])
                     ->collapsible()
                     ->collapsed(),
