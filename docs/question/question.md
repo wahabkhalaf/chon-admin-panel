@@ -7,7 +7,6 @@ The Question module manages quiz and test questions used in competitions. It pro
 ## Model: Question
 
 ### Properties
-
 -   `id`: Auto-incrementing ID
 -   `question_text`: The actual question being asked (text)
 -   `question_type`: Type of question (multi_choice, puzzle, pattern_recognition, true_false, math)
@@ -118,12 +117,14 @@ Each question type has specific form fields:
 -   All questions require question text, question type, and a difficulty level
 -   Multiple choice questions require at least one option marked as correct
 -   Each question type requires its specific answer format
+-   The correct answer is automatically extracted from the marked option in multi-choice questions
 
 #### Editing
 
 -   Questions can only be edited if they are not part of any active competitions
 -   Questions can only be edited if they are not part of competitions open for registration
 -   Questions that are locked (used in active competitions) cannot be modified
+-   For multi-choice questions, the correct answer is automatically updated when options are modified
 
 #### Deletion
 
@@ -131,6 +132,14 @@ Questions can be deleted only if:
 
 -   They are not part of any active competitions
 -   They are not part of competitions open for registration
+
+#### Multi-Choice Question Behavior
+
+-   Only one option can be marked as correct at a time
+-   When an option is marked as correct, all other options are automatically unchecked
+-   At least one option must always be marked as correct
+-   The correct answer field is automatically populated from the marked option
+-   Both English and Kurdish versions maintain separate correct answer tracking
 
 ## Table Display
 
@@ -276,3 +285,45 @@ This view provides a formatted display of question details, including:
 -   Answer options (for multiple choice)
 -   Correct answer
 -   Usage in competitions
+
+## Troubleshooting
+
+### Common Issues
+
+#### "Correct answer field is required" Error
+
+**Problem**: When creating or editing a multi-choice question, you get a validation error saying the correct answer field is required, even though you've marked an option as correct.
+
+**Cause**: This typically happens when there's a disconnect between the form's state management and the validation system. The `is_correct` toggle in the options repeater isn't properly updating the hidden `correct_answer` field.
+
+**Solution**: 
+1. Ensure you've marked at least one option as correct using the toggle
+2. Try refreshing the page and re-entering the data
+3. Check that the question type is set to "Multi-choice"
+4. Verify that both English and Kurdish options (if provided) have at least one correct answer marked
+
+**Technical Details**: The form uses multiple validation layers:
+- Form-level validation with `afterStateUpdated` callbacks
+- Page-level validation in `CreateQuestion` and `EditQuestion` classes
+- Hidden field `dehydrateStateUsing` for final data processing
+
+If the issue persists, it may indicate a JavaScript error or form state corruption. Try clearing your browser cache or using a different browser.
+
+#### Options Not Saving Correctly
+
+**Problem**: Options are not being saved or are being reset when the form is submitted.
+
+**Solution**:
+1. Ensure all required fields are filled
+2. Check that the question type is correctly selected
+3. Verify that at least one option is marked as correct
+4. Make sure the form is not being interrupted by validation errors
+
+#### Kurdish Translation Issues
+
+**Problem**: Kurdish translations are not being saved or are causing validation errors.
+
+**Solution**:
+1. Kurdish translations are optional - you can leave them empty
+2. If you provide Kurdish options, ensure at least one is marked as correct
+3. Check that the Kurdish question text is provided if you're adding Kurdish options

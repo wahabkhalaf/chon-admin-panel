@@ -69,31 +69,39 @@ class QuestionResource extends Resource
                                             return;
                                         }
 
-                                        $currentIndex = array_key_last($livewire->data['options']);
-
                                         if ($state) {
+                                            // When marking an option as correct, set all others to false
                                             foreach ($livewire->data['options'] as $index => $option) {
-                                                if ($index !== $currentIndex) {
+                                                if (($option['is_correct'] ?? false) === true && $index !== array_key_last($livewire->data['options'])) {
                                                     $set("options.{$index}.is_correct", false);
                                                 }
                                             }
-                                            if (isset($livewire->data['options'][$currentIndex]['option'])) {
-                                                $set('correct_answer', $livewire->data['options'][$currentIndex]['option']);
-                                            }
                                         } else {
+                                            // Check if any other option is marked as correct
                                             $hasCorrectOption = false;
-                                            foreach ($livewire->data['options'] as $option) {
+                                            foreach ($livewire->data['options'] as $index => $option) {
                                                 if (($option['is_correct'] ?? false) === true) {
                                                     $hasCorrectOption = true;
                                                     break;
                                                 }
                                             }
+
+                                            // If no correct option exists, force the last option to remain correct
                                             if (!$hasCorrectOption) {
-                                                $set("options.{$currentIndex}.is_correct", true);
+                                                $lastIndex = array_key_last($livewire->data['options']);
+                                                $set("options.{$lastIndex}.is_correct", true);
                                                 Notification::make()
                                                     ->warning()
                                                     ->title('At least one option must be marked as correct')
                                                     ->send();
+                                            }
+                                        }
+
+                                        // Always update correct_answer based on the current state
+                                        foreach ($livewire->data['options'] as $option) {
+                                            if (($option['is_correct'] ?? false) === true) {
+                                                $set('correct_answer', $option['option'] ?? '');
+                                                break;
                                             }
                                         }
                                     }),
@@ -107,7 +115,29 @@ class QuestionResource extends Resource
                                 'array',
                             ])
                             ->default([])
-                            ->live(),
+                            ->live()
+                            ->afterStateUpdated(function (callable $set, $livewire) {
+                                // Ensure correct_answer is set when options change
+                                if (isset($livewire->data['options']) && is_array($livewire->data['options'])) {
+                                    foreach ($livewire->data['options'] as $option) {
+                                        if (($option['is_correct'] ?? false) === true) {
+                                            $set('correct_answer', $option['option'] ?? '');
+                                            break;
+                                        }
+                                    }
+                                }
+                            })
+                            ->beforeStateDehydrated(function (callable $set, $livewire) {
+                                // Ensure correct_answer is set before form submission
+                                if (isset($livewire->data['options']) && is_array($livewire->data['options'])) {
+                                    foreach ($livewire->data['options'] as $option) {
+                                        if (($option['is_correct'] ?? false) === true) {
+                                            $set('correct_answer', $option['option'] ?? '');
+                                            break;
+                                        }
+                                    }
+                                }
+                            }),
 
                         // Puzzle answer
                         Forms\Components\TextInput::make('correct_answer')
@@ -164,13 +194,14 @@ class QuestionResource extends Resource
                                     $options = $get('options') ?? [];
                                     foreach ($options as $option) {
                                         if (($option['is_correct'] ?? false) === true) {
-                                            return $option['option'] ?? null;
+                                            return $option['option'] ?? '';
                                         }
                                     }
-                                    return null;
+                                    return ''; // Return empty string instead of null for better validation
                                 }
                                 return $get('correct_answer');
-                            }),
+                            })
+                            ->live(),
                     ]),
 
                 Forms\Components\Section::make('Kurdish Translation')
@@ -193,38 +224,39 @@ class QuestionResource extends Resource
                                             return;
                                         }
 
-                                        // Get current repeater item
-                                        $currentIndex = array_key_last($livewire->data['options_kurdish']);
-
                                         if ($state) {
                                             // When marking an option as correct, set all others to false
                                             foreach ($livewire->data['options_kurdish'] as $index => $option) {
-                                                if ($index !== $currentIndex) {
+                                                if (($option['is_correct'] ?? false) === true && $index !== array_key_last($livewire->data['options_kurdish'])) {
                                                     $set("options_kurdish.{$index}.is_correct", false);
                                                 }
                                             }
-
-                                            // Set the correct answer in Kurdish
-                                            if (isset($livewire->data['options_kurdish'][$currentIndex]['option'])) {
-                                                $set('correct_answer_kurdish', $livewire->data['options_kurdish'][$currentIndex]['option']);
-                                            }
                                         } else {
-                                            // Check if any option is marked as correct
+                                            // Check if any other option is marked as correct
                                             $hasCorrectOption = false;
-                                            foreach ($livewire->data['options_kurdish'] as $option) {
+                                            foreach ($livewire->data['options_kurdish'] as $index => $option) {
                                                 if (($option['is_correct'] ?? false) === true) {
                                                     $hasCorrectOption = true;
                                                     break;
                                                 }
                                             }
 
-                                            // If no correct option exists, force this option to remain correct
+                                            // If no correct option exists, force the last option to remain correct
                                             if (!$hasCorrectOption) {
-                                                $set("options_kurdish.{$currentIndex}.is_correct", true);
+                                                $lastIndex = array_key_last($livewire->data['options_kurdish']);
+                                                $set("options_kurdish.{$lastIndex}.is_correct", true);
                                                 Notification::make()
                                                     ->warning()
                                                     ->title('At least one Kurdish option must be marked as correct')
                                                     ->send();
+                                            }
+                                        }
+
+                                        // Always update correct_answer_kurdish based on the current state
+                                        foreach ($livewire->data['options_kurdish'] as $option) {
+                                            if (($option['is_correct'] ?? false) === true) {
+                                                $set('correct_answer_kurdish', $option['option'] ?? '');
+                                                break;
                                             }
                                         }
                                     }),
@@ -238,7 +270,29 @@ class QuestionResource extends Resource
                                 'array',
                             ])
                             ->default([])
-                            ->live(),
+                            ->live()
+                            ->afterStateUpdated(function (callable $set, $livewire) {
+                                // Ensure correct_answer_kurdish is set when options change
+                                if (isset($livewire->data['options_kurdish']) && is_array($livewire->data['options_kurdish'])) {
+                                    foreach ($livewire->data['options_kurdish'] as $option) {
+                                        if (($option['is_correct'] ?? false) === true) {
+                                            $set('correct_answer_kurdish', $option['option'] ?? '');
+                                            break;
+                                        }
+                                    }
+                                }
+                            })
+                            ->beforeStateDehydrated(function (callable $set, $livewire) {
+                                // Ensure correct_answer_kurdish is set before form submission
+                                if (isset($livewire->data['options_kurdish']) && is_array($livewire->data['options_kurdish'])) {
+                                    foreach ($livewire->data['options_kurdish'] as $option) {
+                                        if (($option['is_correct'] ?? false) === true) {
+                                            $set('correct_answer_kurdish', $option['option'] ?? '');
+                                            break;
+                                        }
+                                    }
+                                }
+                            }),
 
                         // Other answer types in Kurdish
                         Forms\Components\TextInput::make('correct_answer_kurdish')
