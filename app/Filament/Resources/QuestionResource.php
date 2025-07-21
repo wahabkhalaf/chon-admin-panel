@@ -202,6 +202,13 @@ class QuestionResource extends Resource
                                 return $get('correct_answer');
                             })
                             ->live(),
+
+                        Forms\Components\TextInput::make('seconds')
+                            ->label('Seconds')
+                            ->numeric()
+                            ->minValue(1)
+                            ->required()
+                            ->helperText('Time allowed for this question (in seconds).'),
                     ]),
 
                 Forms\Components\Section::make('Kurdish Translation')

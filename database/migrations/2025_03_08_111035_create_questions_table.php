@@ -22,6 +22,7 @@ return new class extends Migration {
             ]);
             $table->jsonb('options')->nullable();
             $table->string('correct_answer');
+            $table->integer('seconds')->nullable()->comment('Time allowed for this question in seconds');
             $table->timestamps();
         });
     }

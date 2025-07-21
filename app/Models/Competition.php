@@ -210,4 +210,19 @@ class Competition extends Model
     {
         return $this->hasMany(Transaction::class, 'competition_id');
     }
+
+    public function setOpenTimeAttribute($value)
+    {
+        $this->attributes['open_time'] = \Carbon\Carbon::parse($value, 'Asia/Baghdad')->format('Y-m-d H:i:s');
+    }
+
+    public function setStartTimeAttribute($value)
+    {
+        $this->attributes['start_time'] = \Carbon\Carbon::parse($value, 'Asia/Baghdad')->format('Y-m-d H:i:s');
+    }
+
+    public function setEndTimeAttribute($value)
+    {
+        $this->attributes['end_time'] = \Carbon\Carbon::parse($value, 'Asia/Baghdad')->format('Y-m-d H:i:s');
+    }
 }

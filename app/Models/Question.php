@@ -25,6 +25,7 @@ class Question extends Model
         'correct_answer',
         'correct_answer_kurdish',
         'level',
+        'seconds', // Added seconds for time allowed per question
     ];
 
     /**
