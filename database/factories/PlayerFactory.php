@@ -30,6 +30,8 @@ class PlayerFactory extends Factory
             'total_score' => fake()->numberBetween(0, 10000),
             'level' => fake()->numberBetween(1, 50),
             'experience_points' => fake()->numberBetween(0, 5000),
+            'is_verified' => fake()->boolean(80), // 80% chance of being verified
+            'language' => fake()->randomElement(['en', 'ku', 'ar']), // English, Kurdish, Arabic
             'joined_at' => fake()->dateTimeBetween('-1 year', 'now'),
             'updated_at' => fake()->dateTimeBetween('-1 month', 'now'),
         ];

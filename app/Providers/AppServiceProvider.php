@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Competition;
+use App\Observers\CompetitionObserver;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +21,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Competition::observe(CompetitionObserver::class);
     }
 }
