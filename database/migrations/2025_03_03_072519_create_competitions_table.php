@@ -11,12 +11,15 @@ return new class extends Migration {
             $table->id();
             $table->string('name', 100)->comment('Competition name');
             $table->text('description')->nullable()->comment('Competition description');
+            $table->string('name_kurdish', 100)->nullable()->comment('Competition name in Kurdish');
+            $table->text('description_kurdish')->nullable()->comment('Competition description in Kurdish');
             $table->decimal('entry_fee', 10, 2)->comment('Entry fee must be non-negative');
             $table->timestamp('open_time')->comment('Registration opening time');
             $table->timestamp('start_time')->comment('Competition start time');
             $table->timestamp('end_time')->comment('Competition end time');
             $table->integer('max_users')->comment('Maximum number of users allowed');
             $table->string('game_type')->comment('Type of game for this competition');
+            
             $table->timestamps();
 
             // Constraints

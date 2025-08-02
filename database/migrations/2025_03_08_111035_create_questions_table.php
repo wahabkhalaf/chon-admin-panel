@@ -13,6 +13,7 @@ return new class extends Migration {
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
             $table->text('question_text');
+            $table->text('question_text_kurdish')->nullable();
             $table->enum('question_type', [
                 'multi_choice',
                 'puzzle',
@@ -21,7 +22,10 @@ return new class extends Migration {
                 'math'
             ]);
             $table->jsonb('options')->nullable();
+            $table->jsonb('options_kurdish')->nullable();
             $table->string('correct_answer');
+            $table->string('correct_answer_kurdish')->nullable();
+            $table->enum('level', ['easy', 'medium', 'hard'])->default('medium');
             $table->integer('seconds')->nullable()->comment('Time allowed for this question in seconds');
             $table->timestamps();
         });
