@@ -12,7 +12,7 @@ class ExpressApiClient
 
     public function __construct()
     {
-        $this->baseUrl = config('services.express.base_url', 'http://localhost:3001');
+        $this->baseUrl = config('services.express.base_url', 'http://api.chonapp.net');
         $this->apiToken = config('services.express.api_token');
     }
 

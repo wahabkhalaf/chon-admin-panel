@@ -31,6 +31,9 @@ class CompetitionLeaderboardRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('player.nickname')
                     ->label('Player')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('player.whatsapp_number')
+                    ->label('WhatsApp Number')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('score')
                     ->label('Score')
                     ->sortable(),
