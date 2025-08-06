@@ -24,6 +24,9 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        // Create the GameMaster player
+        $this->call(GameMasterSeeder::class);
+
         // Run the comprehensive competition seeder
         // This will handle checking if prerequisite data exists
         // and only seed what's needed

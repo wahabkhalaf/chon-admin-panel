@@ -58,7 +58,15 @@ class CompetitionFullSeeder extends Seeder
             'math' => Question::where('question_type', 'math')->inRandomOrder()->take(20)->get(),
         ];
 
-        // Define our competition configurations
+
+        //remove all competitions
+        Competition::truncate();
+        CompetitionLeaderboard::truncate();
+        CompetitionPlayerAnswer::truncate();
+        Transaction::truncate();
+        TransactionLog::truncate();
+
+        // Define our competition configurations - Active competitions for testing
         $competitions = [
             [
                 'name' => 'Trivia Blast',
@@ -66,7 +74,7 @@ class CompetitionFullSeeder extends Seeder
                 'entry_fee' => 5.00,
                 'max_users' => 100,
                 'game_type' => 'multi_choice',
-                'time_modifier' => '-5 days',
+                'time_modifier' => '+1 minute',
                 'question_count' => 15,
                 'player_count' => 20,
                 'prize_tiers' => [
@@ -81,7 +89,7 @@ class CompetitionFullSeeder extends Seeder
                 'entry_fee' => 3.00,
                 'max_users' => 200,
                 'game_type' => 'puzzle',
-                'time_modifier' => '-3 days',
+                'time_modifier' => '+1 minute',
                 'question_count' => 10,
                 'player_count' => 15,
                 'prize_tiers' => [
@@ -95,7 +103,7 @@ class CompetitionFullSeeder extends Seeder
                 'entry_fee' => 10.00,
                 'max_users' => 50,
                 'game_type' => 'pattern_recognition',
-                'time_modifier' => '-7 days',
+                'time_modifier' => '+1 minute',
                 'question_count' => 12,
                 'player_count' => 12,
                 'prize_tiers' => [
@@ -109,7 +117,7 @@ class CompetitionFullSeeder extends Seeder
                 'entry_fee' => 2.00,
                 'max_users' => 500,
                 'game_type' => 'true_false',
-                'time_modifier' => '-1 day',
+                'time_modifier' => '+1 minute',
                 'question_count' => 20,
                 'player_count' => 18,
                 'prize_tiers' => [
@@ -122,7 +130,7 @@ class CompetitionFullSeeder extends Seeder
                 'entry_fee' => 7.00,
                 'max_users' => 80,
                 'game_type' => 'math',
-                'time_modifier' => '-10 days',
+                'time_modifier' => '+1 minute',
                 'question_count' => 10,
                 'player_count' => 10,
                 'prize_tiers' => [
@@ -142,11 +150,11 @@ class CompetitionFullSeeder extends Seeder
 
         // Process each competition
         foreach ($competitions as $config) {
-            // Create base timestamps for this competition
-            $baseTime = now()->modify($config['time_modifier']);
-            $openTime = (clone $baseTime)->subHours(12);
-            $startTime = clone $baseTime;
-            $endTime = (clone $baseTime)->addHours(2);
+            // Create base timestamps for this competition - Active for testing
+            $startTime = now()->modify($config['time_modifier']);
+            $openTime = (clone $startTime)->subMinute(); // Open 1 minute before start time
+            $baseTime = clone $startTime;
+            $endTime = (clone $startTime)->addMinute(); // Competition lasts only 1 minute
 
             // 1. Create the competition
             $competition = Competition::create([
@@ -190,7 +198,7 @@ class CompetitionFullSeeder extends Seeder
 
             // 5. Process each player's participation in this competition
             $playerScores = [];
-            $registrationTime = (clone $openTime)->addMinutes(rand(10, 600)); // Random time after registration opened
+            $registrationTime = (clone $openTime)->addMinutes(rand(1, 5)); // Random time shortly after registration opened
 
             foreach ($players as $index => $player) {
                 // 5.1 Create a transaction for the player (entry fee payment)
@@ -235,7 +243,7 @@ class CompetitionFullSeeder extends Seeder
 
                     // 5.2 If the payment was successful, the player answers questions
                     $score = 0;
-                    $questionAnswerTime = (clone $startTime)->addMinutes(rand(5, 60)); // Some time after the competition started
+                    $questionAnswerTime = (clone $startTime)->addMinutes(rand(1, 10)); // Some time after the competition started
 
                     foreach ($questions as $question) {
                         // Determine if the answer is correct (with 60% chance of being correct)
