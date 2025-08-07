@@ -17,8 +17,8 @@ class QuestionFactory extends Factory
      */
     public function definition(): array
     {
-        $questionTypes = array_keys(Question::TYPES);
-        $questionType = $this->faker->randomElement($questionTypes);
+        // Check if question_type is already set in the factory state
+        $questionType = $this->state['question_type'] ?? $this->faker->randomElement(array_keys(Question::TYPES));
 
         return match ($questionType) {
             'multi_choice' => $this->multiChoiceQuestion(),

@@ -211,6 +211,38 @@ class Competition extends Model
         return $this->hasMany(Transaction::class, 'competition_id');
     }
 
+    /**
+     * Get the registrations for this competition.
+     */
+    public function registrations()
+    {
+        return $this->hasMany(CompetitionRegistration::class, 'competition_id');
+    }
+
+    /**
+     * Get only the successfully registered participants.
+     */
+    public function registeredParticipants()
+    {
+        return $this->registrations()->registered();
+    }
+
+    /**
+     * Get the count of registered participants.
+     */
+    public function getRegisteredParticipantsCount(): int
+    {
+        return $this->registeredParticipants()->count();
+    }
+
+    /**
+     * Check if the competition is full.
+     */
+    public function isFull(): bool
+    {
+        return $this->getRegisteredParticipantsCount() >= $this->max_users;
+    }
+
     public function setOpenTimeAttribute($value)
     {
         $this->attributes['open_time'] = \Carbon\Carbon::parse($value, 'Asia/Baghdad')->format('Y-m-d H:i:s');

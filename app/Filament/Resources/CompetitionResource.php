@@ -7,6 +7,7 @@ use App\Filament\Resources\CompetitionResource\RelationManagers\CompetitionLeade
 use App\Filament\Resources\CompetitionResource\RelationManagers\CompetitionPlayerAnswersRelationManager;
 use App\Filament\Resources\CompetitionResource\RelationManagers\PrizeTiersRelationManager;
 use App\Filament\Resources\CompetitionResource\RelationManagers\QuestionsRelationManager;
+use App\Filament\Resources\CompetitionResource\RelationManagers\RegistrationsRelationManager;
 use App\Filament\Resources\CompetitionResource\RelationManagers\TransactionsRelationManager;
 use App\Filament\Resources\CompetitionResource\Widgets\CompetitionStats;
 use App\Models\Competition;
@@ -286,6 +287,7 @@ class CompetitionResource extends Resource
     public static function getRelations(): array
     {
         return [
+            RegistrationsRelationManager::class,
             QuestionsRelationManager::class,
             CompetitionPlayerAnswersRelationManager::class,
             CompetitionLeaderboardRelationManager::class,

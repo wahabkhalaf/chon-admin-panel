@@ -83,6 +83,22 @@ class Player extends Model
     }
 
     /**
+     * Get the competition registrations for the player.
+     */
+    public function competitionRegistrations(): HasMany
+    {
+        return $this->hasMany(CompetitionRegistration::class);
+    }
+
+    /**
+     * Get the successfully registered competitions for the player.
+     */
+    public function registeredCompetitions()
+    {
+        return $this->competitionRegistrations()->registered()->with('competition');
+    }
+
+    /**
      * Generate and store a new OTP for this player
      * 
      * @param string $purpose The purpose of the OTP (login, registration, verification)

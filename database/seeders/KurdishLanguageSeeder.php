@@ -21,37 +21,27 @@ class KurdishLanguageSeeder extends Seeder
             $kurdishTranslations = [
                 [
                     'question_text_kurdish' => 'پرسیارێک لە کوردی: ' . $question->question_text,
-                    'options_kurdish' => $question->options ? array_map(function ($option) {
-                        return ['option' => 'بژاردەی کوردی: ' . $option['option'], 'is_correct' => $option['is_correct'] ?? false];
-                    }, $question->options) : null,
+                    'options_kurdish' => $this->translateOptions($question->options),
                     'correct_answer_kurdish' => $question->correct_answer ? 'وەڵامی کوردی: ' . $question->correct_answer : null,
                 ],
                 [
                     'question_text_kurdish' => 'سووڵێک بە کوردی: ' . $question->question_text,
-                    'options_kurdish' => $question->options ? array_map(function ($option) {
-                        return ['option' => 'هەڵبژاردەی کوردی: ' . $option['option'], 'is_correct' => $option['is_correct'] ?? false];
-                    }, $question->options) : null,
+                    'options_kurdish' => $this->translateOptions($question->options),
                     'correct_answer_kurdish' => $question->correct_answer ? 'وەڵامی ڕاستەقینە بە کوردی: ' . $question->correct_answer : null,
                 ],
                 [
                     'question_text_kurdish' => 'پرسیارێک لە زمانی کوردی: ' . $question->question_text,
-                    'options_kurdish' => $question->options ? array_map(function ($option) {
-                        return ['option' => 'هەڵبژاردە بە کوردی: ' . $option['option'], 'is_correct' => $option['is_correct'] ?? false];
-                    }, $question->options) : null,
+                    'options_kurdish' => $this->translateOptions($question->options),
                     'correct_answer_kurdish' => $question->correct_answer ? 'وەڵامی دروست بە کوردی: ' . $question->correct_answer : null,
                 ],
                 [
                     'question_text_kurdish' => 'پرسیارێک لە کوردی: ' . $question->question_text,
-                    'options_kurdish' => $question->options ? array_map(function ($option) {
-                        return ['option' => 'بژاردە بە کوردی: ' . $option['option'], 'is_correct' => $option['is_correct'] ?? false];
-                    }, $question->options) : null,
+                    'options_kurdish' => $this->translateOptions($question->options),
                     'correct_answer_kurdish' => $question->correct_answer ? 'وەڵامی ڕاست بە کوردی: ' . $question->correct_answer : null,
                 ],
                 [
                     'question_text_kurdish' => 'سووڵێک لە کوردی: ' . $question->question_text,
-                    'options_kurdish' => $question->options ? array_map(function ($option) {
-                        return ['option' => 'هەڵبژاردەی کوردی: ' . $option['option'], 'is_correct' => $option['is_correct'] ?? false];
-                    }, $question->options) : null,
+                    'options_kurdish' => $this->translateOptions($question->options),
                     'correct_answer_kurdish' => $question->correct_answer ? 'وەڵامی دروست بە کوردی: ' . $question->correct_answer : null,
                 ],
             ];
@@ -80,8 +70,37 @@ class KurdishLanguageSeeder extends Seeder
                 'name_kurdish' => $kurdishNames[$index % count($kurdishNames)],
                 'description_kurdish' => $kurdishDescriptions[$index % count($kurdishDescriptions)],
             ]);
-        }       
+        }
 
         $this->command->info('Kurdish language translations have been added successfully!');
+    }
+
+    /**
+     * Translate options to Kurdish format
+     */
+    private function translateOptions($options): ?array
+    {
+        if (!$options || empty($options)) {
+            return null;
+        }
+
+        // Handle simple string arrays
+        if (is_array($options) && isset($options[0]) && is_string($options[0])) {
+            return array_map(function ($option) {
+                return 'بژاردەی کوردی: ' . $option;
+            }, $options);
+        }
+
+        // Handle complex option arrays with 'option' and 'is_correct' keys
+        if (is_array($options) && isset($options[0]['option'])) {
+            return array_map(function ($option) {
+                return [
+                    'option' => 'بژاردەی کوردی: ' . $option['option'],
+                    'is_correct' => $option['is_correct'] ?? false
+                ];
+            }, $options);
+        }
+
+        return null;
     }
 }
