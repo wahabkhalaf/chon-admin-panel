@@ -43,20 +43,19 @@ class CompetitionObserver
         $notificationData = [
             'title' => 'New Competition Available! 🏆',
             'title_kurdish' => 'پێشبڕکێکی نوێ! 🏆',
-            'message' => "\"{$competition->name}\" created by Admin - {$competition->description}",
-            'message_kurdish' => "\"{$competition->name}\" لەلایەن ئەدمین دروست کرا - {$competition->description}",
+            'message' => "New competition \"{$competition->name}\" is now available.",
+            'message_kurdish' => "پێشبڕکێی \"{$competition->name}\" ئێستا بەردەستە.",
             'type' => 'competition',
             'priority' => 'high',
             'data' => [
                 'competitionId' => $competition->id,
                 'competitionName' => $competition->name,
+                'competitionNameKurdish' => $competition->name_kurdish,
+                'description' => $competition->description,
+                'descriptionKurdish' => $competition->description_kurdish,
                 'entryFee' => $competition->entry_fee,
                 'startTime' => $competition->start_time,
                 'gameType' => $competition->game_type,
-                'creator' => [
-                    'id' => 'admin',
-                    'nickname' => 'Admin'
-                ]
             ]
         ];
 
@@ -82,17 +81,19 @@ class CompetitionObserver
         if ($reminderTime->isFuture()) {
             Notification::create([
                 'title' => 'Competition Starting Soon! ⏰',
+                'title_kurdish' => 'بەم دوایە پێشبڕکێ دەستپێدەکات! ⏰',
                 'message' => "\"{$competition->name}\" starts in 5 minutes! Join now!",
+                'message_kurdish' => "\"{$competition->name}\" لە ٥ خولەکدا دەستپێدەکات! ئێستا بەشدار ببە!",
                 'type' => 'competition',
                 'priority' => 'high',
                 'data' => [
                     'competitionId' => $competition->id,
                     'competitionName' => $competition->name,
+                    'competitionNameKurdish' => $competition->name_kurdish,
+                    'description' => $competition->description,
+                    'descriptionKurdish' => $competition->description_kurdish,
                     'startTime' => $competition->start_time,
-                    'creator' => [
-                        'id' => 'admin',
-                        'nickname' => 'Admin'
-                    ]
+                    'gameType' => $competition->game_type,
                 ],
                 'scheduled_at' => $reminderTime,
                 'status' => 'pending',
@@ -115,10 +116,6 @@ class CompetitionObserver
                 'entryFee' => $competition->entry_fee,
                 'startTime' => $competition->start_time,
                 'gameType' => $competition->game_type,
-                'creator' => [
-                    'id' => 'admin',
-                    'nickname' => 'Admin'
-                ]
             ]
         ];
 
@@ -148,12 +145,11 @@ class CompetitionObserver
             'data' => [
                 'competitionId' => $competition->id,
                 'competitionName' => $competition->name,
+                'competitionNameKurdish' => $competition->name_kurdish,
+                'description' => $competition->description,
+                'descriptionKurdish' => $competition->description_kurdish,
                 'startTime' => $competition->start_time,
                 'gameType' => $competition->game_type,
-                'creator' => [
-                    'id' => 'admin',
-                    'nickname' => 'Admin'
-                ]
             ]
         ];
 

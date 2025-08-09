@@ -8,6 +8,7 @@ use App\Services\ExpressApiClient;
 use Filament\Forms;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification as FilamentNotification;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -144,8 +145,19 @@ class NotificationResource extends Resource
                                 ->label('Send Test Notification')
                                 ->icon('heroicon-o-paper-airplane')
                                 ->color('warning')
-                                ->action(function (array $data) {
-                                    return self::sendTestNotification($data);
+                                ->action(function (array $data, Get $get) {
+                                    // Pull live form values so we send what the user entered
+                                    $payload = [
+                                        'title' => $get('title'),
+                                        'title_kurdish' => $get('title_kurdish'),
+                                        'message' => $get('message'),
+                                        'message_kurdish' => $get('message_kurdish'),
+                                        'type' => $get('type'),
+                                        'priority' => $get('priority'),
+                                        'data' => $get('data'),
+                                        'user_ids' => $get('user_ids'),
+                                    ];
+                                    return self::sendTestNotification($payload);
                                 })
                                 ->requiresConfirmation()
                                 ->modalHeading('Send Test Notification')
@@ -271,9 +283,9 @@ class NotificationResource extends Resource
             $apiClient = app(ExpressApiClient::class);
 
             $notificationData = [
-                'title' => $data['title'] ?? 'Test Notification',
+                'title' => $data['title'] ?? '',
                 'title_kurdish' => $data['title_kurdish'] ?? null,
-                'message' => $data['message'] ?? 'This is a test notification from the admin panel.',
+                'message' => $data['message'] ?? '',
                 'message_kurdish' => $data['message_kurdish'] ?? null,
                 'type' => $data['type'] ?? 'general',
                 'priority' => $data['priority'] ?? 'normal',
