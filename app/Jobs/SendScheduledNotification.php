@@ -27,13 +27,15 @@ class SendScheduledNotification implements ShouldQueue
         try {
             $notificationData = [
                 'title' => $this->notification->title,
+                'title_kurdish' => $this->notification->title_kurdish,
                 'message' => $this->notification->message,
+                'message_kurdish' => $this->notification->message_kurdish,
                 'type' => $this->notification->type,
                 'priority' => $this->notification->priority,
                 'data' => $this->notification->data ?? [],
             ];
 
-            $result = $apiClient->sendNotificationToAllPlayers($notificationData);
+            $result = $apiClient->sendNotification($notificationData);
 
             $this->notification->update([
                 'status' => $result['success'] ? 'sent' : 'failed',

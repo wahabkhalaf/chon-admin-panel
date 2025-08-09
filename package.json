@@ -3,7 +3,8 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "test:admin-token": "node scripts/test-admin-token.js"
     },
     "devDependencies": {
         "autoprefixer": "^10.4.20",

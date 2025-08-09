@@ -34,12 +34,25 @@ class NotificationResource extends Resource
                             ->placeholder('Enter notification title')
                             ->disabled(fn($record) => $record && $record->status === 'sent'),
 
+                        Forms\Components\TextInput::make('title_kurdish')
+                            ->label('Notification Title (Kurdish)')
+                            ->maxLength(100)
+                            ->placeholder('Navê ragihandinê (Kurdî)')
+                            ->disabled(fn($record) => $record && $record->status === 'sent'),
+
                         Forms\Components\Textarea::make('message')
                             ->label('Notification Message')
                             ->required()
                             ->maxLength(500)
                             ->rows(3)
                             ->placeholder('Enter notification message')
+                            ->disabled(fn($record) => $record && $record->status === 'sent'),
+
+                        Forms\Components\Textarea::make('message_kurdish')
+                            ->label('Notification Message (Kurdish)')
+                            ->maxLength(500)
+                            ->rows(3)
+                            ->placeholder('Peyama ragihandinê (Kurdî)')
                             ->disabled(fn($record) => $record && $record->status === 'sent'),
 
                         Forms\Components\Select::make('type')
@@ -50,6 +63,7 @@ class NotificationResource extends Resource
                                 'announcement' => 'Announcement',
                                 'maintenance' => 'Maintenance',
                                 'update' => 'Update',
+                                'personal' => 'Personal',
                             ])
                             ->default('general')
                             ->required()
@@ -105,6 +119,13 @@ class NotificationResource extends Resource
                             ->visible(fn($record) => $record && in_array($record->status, ['sent', 'failed']))
                             ->disabled(),
 
+                        Forms\Components\TextInput::make('user_ids')
+                            ->label('Target User IDs (optional)')
+                            ->placeholder('e.g. 1,2,3')
+                            ->helperText('Comma-separated player IDs. Leave empty to send to all users (if supported by API).')
+                            ->disabled(fn($record) => $record && $record->status === 'sent')
+                            ->visible(fn($get) => (bool) $get('send_immediately')),
+
                         Forms\Components\Toggle::make('send_immediately')
                             ->label('Send Immediately')
                             ->default(true)
@@ -128,7 +149,7 @@ class NotificationResource extends Resource
                                 })
                                 ->requiresConfirmation()
                                 ->modalHeading('Send Test Notification')
-                                ->modalDescription('This will send a test notification to all players immediately.')
+                                ->modalDescription('This will send a test notification to the specified users (or all, if supported).')
                         ])
                     ])
             ]);
@@ -251,13 +272,25 @@ class NotificationResource extends Resource
 
             $notificationData = [
                 'title' => $data['title'] ?? 'Test Notification',
+                'title_kurdish' => $data['title_kurdish'] ?? null,
                 'message' => $data['message'] ?? 'This is a test notification from the admin panel.',
+                'message_kurdish' => $data['message_kurdish'] ?? null,
                 'type' => $data['type'] ?? 'general',
                 'priority' => $data['priority'] ?? 'normal',
                 'data' => $data['data'] ?? [],
             ];
 
-            $result = $apiClient->sendNotificationToAllPlayers($notificationData);
+            // Collect optional target user IDs
+            $userIds = [];
+            if (!empty($data['user_ids'])) {
+                $userIds = collect(explode(',', (string) $data['user_ids']))
+                    ->map(fn($id) => trim($id))
+                    ->filter()
+                    ->values()
+                    ->all();
+            }
+
+            $result = $apiClient->sendNotification($notificationData, $userIds);
 
             if ($result['success']) {
                 FilamentNotification::make()
@@ -299,7 +332,7 @@ class NotificationResource extends Resource
                 'data' => $notification->data ?? [],
             ];
 
-            $result = $apiClient->sendNotificationToAllPlayers($notificationData);
+            $result = $apiClient->sendNotification($notificationData);
 
             $notification->update([
                 'status' => $result['success'] ? 'sent' : 'failed',

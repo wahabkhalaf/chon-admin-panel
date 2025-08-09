@@ -35,9 +35,10 @@ return [
         ],
     ],
 
-    'express' => [
-        'base_url' => env('EXPRESS_API_BASE_URL', 'http://localhost:3001'),
-        'api_token' => env('EXPRESS_API_TOKEN'),
+    // Node/Express API used by Laravel admin to send notifications
+    'api' => [
+        'base_url' => env('API_BASE_URL', 'http://localhost:3001'),
+        'admin_token' => env('API_ADMIN_TOKEN'),
     ],
 
 ];

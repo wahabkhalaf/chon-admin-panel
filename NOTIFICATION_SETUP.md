@@ -2,16 +2,16 @@
 
 ## Overview
 
-This notification system integrates with your Express.js API to send real-time notifications to all players via WebSocket.
+This notification system integrates with your Node/Express API via REST using an admin JWT. The Express API emits WebSocket events to players and stores history.
 
 ## Environment Configuration
 
 Add the following to your `.env` file:
 
 ```env
-# Express.js API Configuration
-EXPRESS_API_BASE_URL=http://localhost:3001
-EXPRESS_API_TOKEN=your-admin-jwt-token-here
+# Node/Express API Configuration
+API_BASE_URL=http://localhost:3001
+API_ADMIN_TOKEN=your-admin-jwt-token-here
 ```
 
 ## Features Implemented
@@ -27,14 +27,15 @@ EXPRESS_API_TOKEN=your-admin-jwt-token-here
 ### ✅ Laravel Backend
 
 -   Notification model with scopes and methods
--   Express.js API client service
+-   Express REST API client service
 -   Competition observer for automatic notifications
 -   Scheduled job for delayed notifications
 -   Console command for processing scheduled notifications
 
 ### ✅ Real-time Features
 
--   Immediate notification sending via Express.js API
+-   Immediate notification sending via Express REST API (admin JWT)
+-   Express API emits WebSocket `notification` event to users
 -   Scheduled notifications using Laravel's task scheduling
 -   Automatic notifications on competition events
 -   Comprehensive error handling and logging
@@ -92,22 +93,18 @@ Then run:
 app(App\Services\ExpressApiClient::class)->testConnection();
 ```
 
-## Express.js API Endpoints Expected
+## Express.js API Endpoints Used
 
-Your Express.js API should have these endpoints:
-
-1. `POST /api/notifications/send-to-all`
-
-    - Sends notification to all connected players
-    - Requires Bearer token authentication
-
-2. `POST /api/notifications/send-to-players`
-
-    - Sends notification to specific players
-    - Requires player_ids array in payload
-
-3. `GET /api/health`
-    - Health check endpoint for connection testing
+-   `POST /api/v1/notifications/send-to-player`
+    -   Headers: `Authorization: Bearer {ADMIN_JWT}`, `API-Version: v1`
+    -   Body: `{ userIds: string[], title, title_kurdish?, message, message_kurdish?, type, priority, data? }`
+-   `POST /api/v1/notifications`
+    -   Create a notification (optionally scheduled). Add `send_immediately: true` to broadcast now.
+-   `POST /api/v1/notifications/:id/send`
+    -   Send an existing notification immediately
+-   `POST /api/v1/notifications/bulk-send`
+    -   Broadcast to all players (no `userIds`). Body supports bilingual fields
+-   `GET /api/health` for health check
 
 ## Notification Types
 

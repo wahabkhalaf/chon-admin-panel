@@ -11,7 +11,9 @@ class Notification extends Model
 
     protected $fillable = [
         'title',
+        'title_kurdish',
         'message',
+        'message_kurdish',
         'type',
         'priority',
         'data',
@@ -93,5 +95,52 @@ class Notification extends Model
             'status' => 'failed',
             'api_response' => $apiResponse,
         ]);
+    }
+
+    /**
+     * Get the player notifications for this notification.
+     */
+    public function playerNotifications()
+    {
+        return $this->hasMany(PlayerNotification::class);
+    }
+
+    /**
+     * Get the players who received this notification.
+     */
+    public function players()
+    {
+        return $this->belongsToMany(Player::class, 'player_notifications')
+            ->withPivot(['received_at', 'read_at', 'delivery_data'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the count of players who received this notification.
+     */
+    public function recipientsCount(): int
+    {
+        return $this->playerNotifications()->count();
+    }
+
+    /**
+     * Get the count of players who read this notification.
+     */
+    public function readCount(): int
+    {
+        return $this->playerNotifications()->read()->count();
+    }
+
+    /**
+     * Get the read rate percentage.
+     */
+    public function readRate(): float
+    {
+        $total = $this->recipientsCount();
+        if ($total === 0) {
+            return 0;
+        }
+
+        return round(($this->readCount() / $total) * 100, 2);
     }
 }

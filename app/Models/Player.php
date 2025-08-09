@@ -99,6 +99,71 @@ class Player extends Model
     }
 
     /**
+     * Get the player's notifications.
+     */
+    public function notifications()
+    {
+        return $this->hasMany(PlayerNotification::class);
+    }
+
+    /**
+     * Get the player's unread notifications.
+     */
+    public function unreadNotifications()
+    {
+        return $this->notifications()->unread()->with('notification');
+    }
+
+    /**
+     * Get the player's read notifications.
+     */
+    public function readNotifications()
+    {
+        return $this->notifications()->read()->with('notification');
+    }
+
+    /**
+     * Get the player's recent notifications (last 30 days).
+     */
+    public function recentNotifications()
+    {
+        return $this->notifications()->recent()->with('notification');
+    }
+
+    /**
+     * Get the count of unread notifications.
+     */
+    public function unreadNotificationsCount(): int
+    {
+        return $this->notifications()->unread()->count();
+    }
+
+    /**
+     * Mark all notifications as read.
+     */
+    public function markAllNotificationsAsRead(): void
+    {
+        $this->notifications()->unread()->update(['read_at' => now()]);
+    }
+
+    /**
+     * Mark a specific notification as read.
+     */
+    public function markNotificationAsRead(int $notificationId): bool
+    {
+        $playerNotification = $this->notifications()
+            ->where('notification_id', $notificationId)
+            ->first();
+
+        if ($playerNotification) {
+            $playerNotification->markAsRead();
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Generate and store a new OTP for this player
      * 
      * @param string $purpose The purpose of the OTP (login, registration, verification)

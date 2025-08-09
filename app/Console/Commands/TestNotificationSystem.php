@@ -33,7 +33,7 @@ class TestNotificationSystem extends Command
 
             $this->info('Sending test notification...');
 
-            $result = $apiClient->sendNotificationToAllPlayers([
+            $result = $apiClient->sendNotification([
                 'title' => 'Test from Laravel',
                 'message' => 'This notification was sent from Laravel admin panel at ' . now()->format('Y-m-d H:i:s'),
                 'type' => 'general',

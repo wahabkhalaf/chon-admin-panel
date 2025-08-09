@@ -24,12 +24,23 @@ class CreateNotification extends CreateRecord
                 $apiClient = app(ExpressApiClient::class);
                 $notificationData = [
                     'title' => $data['title'],
+                    'title_kurdish' => $data['title_kurdish'] ?? null,
                     'message' => $data['message'],
+                    'message_kurdish' => $data['message_kurdish'] ?? null,
                     'type' => $data['type'],
                     'priority' => $data['priority'],
                     'data' => $data['data'] ?? [],
                 ];
-                $result = $apiClient->sendNotificationToAllPlayers($notificationData);
+                $userIds = [];
+                if (!empty($data['user_ids'])) {
+                    $userIds = collect(explode(',', (string) $data['user_ids']))
+                        ->map(fn($id) => trim($id))
+                        ->filter()
+                        ->values()
+                        ->all();
+                }
+
+                $result = $apiClient->sendNotification($notificationData, $userIds);
                 $data['status'] = $result['success'] ? 'sent' : 'failed';
                 $data['api_response'] = $result;
                 $data['sent_at'] = $result['success'] ? now() : null;

@@ -14,3 +14,12 @@ Route::prefix('api/language')->group(function () {
     Route::get('/payment-methods', [LanguageController::class, 'getPaymentMethods']);
     Route::get('/available-languages', [LanguageController::class, 'getAvailableLanguages']);
 });
+
+// API routes for player notifications
+Route::prefix('api/player-notifications')->group(function () {
+    Route::get('/', [App\Http\Controllers\Api\PlayerNotificationController::class, 'index']);
+    Route::get('/unread-count', [App\Http\Controllers\Api\PlayerNotificationController::class, 'unreadCount']);
+    Route::post('/mark-as-read', [App\Http\Controllers\Api\PlayerNotificationController::class, 'markAsRead']);
+    Route::post('/mark-all-as-read', [App\Http\Controllers\Api\PlayerNotificationController::class, 'markAllAsRead']);
+    Route::get('/{notificationId}', [App\Http\Controllers\Api\PlayerNotificationController::class, 'show']);
+});
