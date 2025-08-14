@@ -47,45 +47,26 @@ class Advertising extends Model
      */
     private function getBaseUrl(): string
     {
+        // Simple and fast environment detection
+        $host = request()->getHost();
+        
         // Check if we're in production (chonapp.net)
-        if (request()->getHost() === 'chonapp.net' || 
-            request()->getHost() === 'www.chonapp.net') {
+        if (str_contains($host, 'chonapp.net')) {
             return 'http://chonapp.net';
         }
         
         // Check if we're in local development
-        if (request()->getHost() === 'localhost' || 
-            request()->getHost() === '127.0.0.1') {
+        if (in_array($host, ['localhost', '127.0.0.1'])) {
             return 'http://localhost';
         }
         
-        // Check the current request URL
-        $currentUrl = request()->url();
-        if (str_contains($currentUrl, 'chonapp.net')) {
+        // For API calls or external access, default to production
+        if (request()->is('api/*')) {
             return 'http://chonapp.net';
         }
         
-        // Check if we're accessing via chonapp.net domain
-        if (request()->server('HTTP_HOST') === 'chonapp.net' ||
-            request()->server('HTTP_HOST') === 'www.chonapp.net') {
-            return 'http://chonapp.net';
-        }
-        
-        // Force production URL if we're not on localhost
-        // This ensures API calls from external sources get the correct URL
-        if (request()->getHost() !== 'localhost' && 
-            request()->getHost() !== '127.0.0.1') {
-            return 'http://chonapp.net';
-        }
-        
-        // Additional check: if this is an API call and we're not on localhost, use production
-        if (request()->is('api/*') && 
-            !in_array(request()->getHost(), ['localhost', '127.0.0.1'])) {
-            return 'http://chonapp.net';
-        }
-        
-        // Fallback to config
-        return config('app.url', 'http://localhost');
+        // Fallback to production for any other case
+        return 'http://chonapp.net';
     }
 
     /**

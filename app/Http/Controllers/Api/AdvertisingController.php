@@ -10,6 +10,19 @@ use Illuminate\Http\JsonResponse;
 class AdvertisingController extends Controller
 {
     /**
+     * Add CORS headers to response
+     */
+    private function addCorsHeaders(JsonResponse $response): JsonResponse
+    {
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+        $response->headers->set('Access-Control-Allow-Credentials', 'false');
+        
+        return $response;
+    }
+
+    /**
      * Get all active advertisements
      */
     public function index(): JsonResponse
@@ -28,11 +41,13 @@ class AdvertisingController extends Controller
                 ];
             });
 
-        return response()->json([
+        $response = response()->json([
             'success' => true,
             'data' => $advertisements,
             'count' => $advertisements->count(),
         ]);
+
+        return $this->addCorsHeaders($response);
     }
 
     /**
@@ -40,7 +55,7 @@ class AdvertisingController extends Controller
      */
     public function show(Advertising $advertising): JsonResponse
     {
-        return response()->json([
+        $response = response()->json([
             'success' => true,
             'data' => [
                 'id' => $advertising->id,
@@ -52,6 +67,8 @@ class AdvertisingController extends Controller
                 'updated_at' => $advertising->updated_at->toISOString(),
             ],
         ]);
+
+        return $this->addCorsHeaders($response);
     }
 
     /**
@@ -62,13 +79,15 @@ class AdvertisingController extends Controller
         $advertisement = Advertising::active()->inRandomOrder()->first();
 
         if (!$advertisement) {
-            return response()->json([
+            $response = response()->json([
                 'success' => false,
                 'message' => 'No active advertisements found',
             ], 404);
+            
+            return $this->addCorsHeaders($response);
         }
 
-        return response()->json([
+        $response = response()->json([
             'success' => true,
             'data' => [
                 'id' => $advertisement->id,
@@ -77,6 +96,8 @@ class AdvertisingController extends Controller
                 'image_url' => $advertisement->image_url,
             ],
         ]);
+
+        return $this->addCorsHeaders($response);
     }
 
     /**
@@ -87,17 +108,21 @@ class AdvertisingController extends Controller
         $advertisement = Advertising::active()->first();
 
         if (!$advertisement || !$advertisement->image) {
-            return response()->json([
+            $response = response()->json([
                 'success' => false,
                 'message' => 'No active advertisement image found',
             ], 404);
+            
+            return $this->addCorsHeaders($response);
         }
 
-        return response()->json([
+        $response = response()->json([
             'success' => true,
             'data' => [
                 'image_url' => $advertisement->production_image_url, // Use production URL for API
             ],
         ]);
+
+        return $this->addCorsHeaders($response);
     }
 }
