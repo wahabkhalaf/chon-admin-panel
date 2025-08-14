@@ -15,6 +15,7 @@ class Advertising extends Model
         'company_name',
         'phone_number',
         'image',
+        'is_active',
     ];
 
     protected $casts = [
@@ -27,10 +28,19 @@ class Advertising extends Model
      */
     public function getImageUrlAttribute(): string
     {
-        if ($this->image) {
-            return asset('storage/' . $this->image);
+        if (!$this->image) {
+            return '';
         }
-        return '';
+
+        // If image is already a full URL (external or absolute), return as is
+        if (filter_var($this->image, FILTER_VALIDATE_URL)) {
+            return $this->image;
+        }
+
+        // If image is a relative path, construct the full URL
+        // Use the current app URL from config to ensure HTTP/HTTPS is handled correctly
+        $baseUrl = config('app.url');
+        return rtrim($baseUrl, '/') . '/storage/' . ltrim($this->image, '/');
     }
 
     /**

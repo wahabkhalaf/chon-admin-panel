@@ -78,4 +78,26 @@ class AdvertisingController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Get only the image URL from the active advertisement
+     */
+    public function image(): JsonResponse
+    {
+        $advertisement = Advertising::active()->first();
+
+        if (!$advertisement || !$advertisement->image) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active advertisement image found',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'image_url' => $advertisement->image_url,
+            ],
+        ]);
+    }
 }
