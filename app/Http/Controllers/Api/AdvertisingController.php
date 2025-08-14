@@ -96,7 +96,7 @@ class AdvertisingController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'image_url' => $advertisement->image_url,
+                'image_url' => $advertisement->production_image_url, // Use production URL for API
             ],
         ]);
     }
