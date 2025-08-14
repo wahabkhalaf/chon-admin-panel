@@ -13,5 +13,8 @@ class DatabaseSeeder extends Seeder
     {
         // Run the competition seeder which creates questions and competitions
         $this->call(CompetitionFullSeeder::class);
+        
+        // Run the advertising seeder
+        $this->call(AdvertisingSeeder::class);
     }
 }

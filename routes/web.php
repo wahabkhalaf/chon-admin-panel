@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\LanguageController;
+use App\Http\Controllers\Api\AdvertisingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -22,4 +23,11 @@ Route::prefix('api/player-notifications')->group(function () {
     Route::post('/mark-as-read', [App\Http\Controllers\Api\PlayerNotificationController::class, 'markAsRead']);
     Route::post('/mark-all-as-read', [App\Http\Controllers\Api\PlayerNotificationController::class, 'markAllAsRead']);
     Route::get('/{notificationId}', [App\Http\Controllers\Api\PlayerNotificationController::class, 'show']);
+});
+
+// API routes for advertising
+Route::prefix('api/advertising')->group(function () {
+    Route::get('/', [AdvertisingController::class, 'index']);
+    Route::get('/random', [AdvertisingController::class, 'random']);
+    Route::get('/{advertising}', [AdvertisingController::class, 'show']);
 });
