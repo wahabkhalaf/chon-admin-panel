@@ -10,19 +10,6 @@ use Illuminate\Http\JsonResponse;
 class AdvertisingController extends Controller
 {
     /**
-     * Add CORS headers to response
-     */
-    private function addCorsHeaders(JsonResponse $response): JsonResponse
-    {
-        $response->headers->set('Access-Control-Allow-Origin', '*');
-        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-        $response->headers->set('Access-Control-Allow-Credentials', 'false');
-        
-        return $response;
-    }
-
-    /**
      * Get all active advertisements
      */
     public function index(): JsonResponse
@@ -41,13 +28,11 @@ class AdvertisingController extends Controller
                 ];
             });
 
-        $response = response()->json([
+        return response()->json([
             'success' => true,
             'data' => $advertisements,
             'count' => $advertisements->count(),
         ]);
-
-        return $this->addCorsHeaders($response);
     }
 
     /**
@@ -55,7 +40,7 @@ class AdvertisingController extends Controller
      */
     public function show(Advertising $advertising): JsonResponse
     {
-        $response = response()->json([
+        return response()->json([
             'success' => true,
             'data' => [
                 'id' => $advertising->id,
@@ -67,8 +52,6 @@ class AdvertisingController extends Controller
                 'updated_at' => $advertising->updated_at->toISOString(),
             ],
         ]);
-
-        return $this->addCorsHeaders($response);
     }
 
     /**
@@ -79,15 +62,13 @@ class AdvertisingController extends Controller
         $advertisement = Advertising::active()->inRandomOrder()->first();
 
         if (!$advertisement) {
-            $response = response()->json([
+            return response()->json([
                 'success' => false,
                 'message' => 'No active advertisements found',
             ], 404);
-            
-            return $this->addCorsHeaders($response);
         }
 
-        $response = response()->json([
+        return response()->json([
             'success' => true,
             'data' => [
                 'id' => $advertisement->id,
@@ -96,8 +77,6 @@ class AdvertisingController extends Controller
                 'image_url' => $advertisement->image_url,
             ],
         ]);
-
-        return $this->addCorsHeaders($response);
     }
 
     /**
@@ -108,21 +87,53 @@ class AdvertisingController extends Controller
         $advertisement = Advertising::active()->first();
 
         if (!$advertisement || !$advertisement->image) {
-            $response = response()->json([
+            return response()->json([
                 'success' => false,
                 'message' => 'No active advertisement image found',
             ], 404);
-            
-            return $this->addCorsHeaders($response);
         }
 
-        $response = response()->json([
+        return response()->json([
             'success' => true,
             'data' => [
                 'image_url' => $advertisement->production_image_url, // Use production URL for API
             ],
         ]);
+    }
 
-        return $this->addCorsHeaders($response);
+    /**
+     * Get base64 encoded image (alternative to avoid CORS issues)
+     */
+    public function imageBase64(): JsonResponse
+    {
+        $advertisement = Advertising::active()->first();
+
+        if (!$advertisement || !$advertisement->image) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active advertisement image found',
+            ], 404);
+        }
+
+        $imagePath = storage_path('app/public/advertisements/' . $advertisement->image);
+        
+        if (!file_exists($imagePath)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Image file not found',
+            ], 404);
+        }
+
+        $imageData = file_get_contents($imagePath);
+        $base64 = base64_encode($imageData);
+        $mimeType = mime_content_type($imagePath);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'image_base64' => $base64,
+                'mime_type' => $mimeType,
+            ],
+        ]);
     }
 }

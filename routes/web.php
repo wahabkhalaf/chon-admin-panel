@@ -30,5 +30,6 @@ Route::prefix('api/advertising')->group(function () {
     Route::get('/', [AdvertisingController::class, 'index']);
     Route::get('/random', [AdvertisingController::class, 'random']);
     Route::get('/image', [AdvertisingController::class, 'image']);           // NEW: Get only image
+    Route::get('/image-base64', [AdvertisingController::class, 'imageBase64']); // NEW: Get base64 image
     Route::get('/{advertising}', [AdvertisingController::class, 'show']);
 });

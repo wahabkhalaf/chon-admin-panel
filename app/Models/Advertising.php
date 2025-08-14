@@ -83,8 +83,8 @@ class Advertising extends Model
             return $this->image;
         }
 
-        // Always use production URL for this method
-        return 'http://chonapp.net/storage/' . ltrim($this->image, '/');
+        // Use the CORS-enabled route instead of direct storage access
+        return 'http://chonapp.net/storage/advertisements/' . ltrim($this->image, '/');
     }
 
     /**
