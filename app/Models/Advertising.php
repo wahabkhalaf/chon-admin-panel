@@ -37,9 +37,12 @@ class Advertising extends Model
             return $this->image;
         }
 
+        // Clean the image path - remove any duplicate 'advertisements/' prefix
+        $cleanImagePath = preg_replace('/^advertisements\//', '', $this->image);
+
         // Determine the correct base URL based on environment
         $baseUrl = $this->getBaseUrl();
-        return rtrim($baseUrl, '/') . '/storage/' . ltrim($this->image, '/');
+        return rtrim($baseUrl, '/') . '/storage/' . $cleanImagePath;
     }
 
     /**
@@ -83,8 +86,11 @@ class Advertising extends Model
             return $this->image;
         }
 
+        // Clean the image path - remove any duplicate 'advertisements/' prefix
+        $cleanImagePath = preg_replace('/^advertisements\//', '', $this->image);
+        
         // Use the CORS-enabled route instead of direct storage access
-        return 'http://chonapp.net/storage/advertisements/' . ltrim($this->image, '/');
+        return 'http://chonapp.net/storage/advertisements/' . $cleanImagePath;
     }
 
     /**
