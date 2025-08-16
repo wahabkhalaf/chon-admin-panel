@@ -100,4 +100,20 @@ class Advertising extends Model
     {
         return $query->where('is_active', true);
     }
+
+    /**
+     * Get admin image URL for Filament
+     */
+    public function getAdminImageUrlAttribute(): string
+    {
+        if (!$this->image) {
+            return '';
+        }
+
+        // Clean the image path - remove any duplicate 'advertisements/' prefix
+        $cleanImagePath = preg_replace('/^advertisements\//', '', $this->image);
+        
+        // Use the full server URL for admin panel
+        return 'http://chonapp.net/storage/advertisements/' . $cleanImagePath;
+    }
 }
