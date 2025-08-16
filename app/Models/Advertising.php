@@ -42,7 +42,7 @@ class Advertising extends Model
 
         // Determine the correct base URL based on environment
         $baseUrl = $this->getBaseUrl();
-        return rtrim($baseUrl, '/') . '/storage/' . $cleanImagePath;
+        return rtrim($baseUrl, '/') . '/storage/advertisements/' . $cleanImagePath;
     }
 
     /**
