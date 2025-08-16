@@ -77,8 +77,7 @@ class AdvertisingResource extends Resource
                     ->label('Image')
                     ->disk('public')
                     ->size(60)
-                    ->circular()
-                    ->url(fn (Advertising $record): string => $record->image_url),
+                    ->circular(),
 
                 Tables\Columns\TextColumn::make('is_active')
                     ->label('Status')
