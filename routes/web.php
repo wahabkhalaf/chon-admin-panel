@@ -27,13 +27,18 @@ Route::prefix('api/player-notifications')->group(function () {
     Route::get('/{notificationId}', [App\Http\Controllers\Api\PlayerNotificationController::class, 'show']);
 });
 
-// API routes for advertising
+// API routes for advertising with CORS
 Route::prefix('api/advertising')->group(function () {
-    Route::get('/', [AdvertisingController::class, 'index']);
-    Route::get('/random', [AdvertisingController::class, 'random']);
-    Route::get('/image', [AdvertisingController::class, 'image']);           // NEW: Get only image
-    Route::get('/image-base64', [AdvertisingController::class, 'imageBase64']); // NEW: Get base64 image
-    Route::get('/{advertising}', [AdvertisingController::class, 'show']);
+    Route::get('/', [AdvertisingController::class, 'index'])
+        ->middleware('cors');
+    Route::get('/random', [AdvertisingController::class, 'random'])
+        ->middleware('cors');
+    Route::get('/image', [AdvertisingController::class, 'image'])
+        ->middleware('cors');
+    Route::get('/image-base64', [AdvertisingController::class, 'imageBase64'])
+        ->middleware('cors');
+    Route::get('/{advertising}', [AdvertisingController::class, 'show'])
+        ->middleware('cors');
 });
 
 // Serve advertisement images with CORS headers
