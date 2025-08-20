@@ -28,6 +28,12 @@ class FcmNotificationService
     public function sendNotification(array $notificationData, array $fcmTokens = []): array
     {
         try {
+            // Log the incoming data for debugging
+            \Log::info('FCM sendNotification called', [
+                'notification_data' => $notificationData,
+                'fcm_tokens_count' => count($fcmTokens)
+            ]);
+
             if (empty($fcmTokens)) {
                 return $this->sendToTopic($notificationData);
             }
@@ -37,17 +43,30 @@ class FcmNotificationService
             $failureCount = 0;
 
             foreach ($fcmTokens as $token) {
-                $result = $this->sendToToken($notificationData, $token);
-                $results[] = $result;
+                try {
+                    $result = $this->sendToToken($notificationData, $token);
+                    $results[] = $result;
 
-                if ($result['success']) {
-                    $successCount++;
-                } else {
+                    if ($result['success']) {
+                        $successCount++;
+                    } else {
+                        $failureCount++;
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Error sending to token', [
+                        'token' => $token,
+                        'error' => $e->getMessage()
+                    ]);
+                    $results[] = [
+                        'success' => false,
+                        'error' => $e->getMessage(),
+                        'token' => $token
+                    ];
                     $failureCount++;
                 }
             }
 
-            Log::info('FCM notification sent', [
+            \Log::info('FCM notification sent', [
                 'total' => count($fcmTokens),
                 'success' => $successCount,
                 'failed' => $failureCount,
@@ -65,9 +84,10 @@ class FcmNotificationService
             ];
 
         } catch (\Exception $e) {
-            Log::error('Exception while sending FCM notification', [
+            \Log::error('Exception while sending FCM notification', [
                 'notification' => $notificationData,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return [
@@ -84,10 +104,25 @@ class FcmNotificationService
     protected function sendToToken(array $notificationData, string $token): array
     {
         try {
+            \Log::info('Building FCM message for token', [
+                'token' => $token,
+                'notification_data' => $notificationData
+            ]);
+
             $message = $this->buildMessage($notificationData);
             $message = $message->toToken($token);
 
+            \Log::info('Sending FCM message', [
+                'message_class' => get_class($message)
+            ]);
+
             $result = $this->messaging->send($message);
+
+            \Log::info('FCM send result', [
+                'result' => $result,
+                'result_type' => gettype($result),
+                'result_class' => is_object($result) ? get_class($result) : 'not_object'
+            ]);
 
             // Ensure result is a string
             $messageId = is_string($result) ? $result : (string) $result;
@@ -99,9 +134,10 @@ class FcmNotificationService
             ];
 
         } catch (\Exception $e) {
-            Log::error('Failed to send FCM notification to token', [
+            \Log::error('Failed to send FCM notification to token', [
                 'token' => $token,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return [
@@ -118,15 +154,30 @@ class FcmNotificationService
     protected function sendToTopic(array $notificationData): array
     {
         try {
+            \Log::info('Building FCM message for topic', [
+                'topic' => 'all_users',
+                'notification_data' => $notificationData
+            ]);
+
             $message = $this->buildMessage($notificationData);
             $message = $message->toTopic('all_users');
 
+            \Log::info('Sending FCM message to topic', [
+                'message_class' => get_class($message)
+            ]);
+
             $result = $this->messaging->send($message);
+
+            \Log::info('FCM send result for topic', [
+                'result' => $result,
+                'result_type' => gettype($result),
+                'result_class' => is_object($result) ? get_class($result) : 'not_object'
+            ]);
 
             // Ensure result is a string
             $messageId = is_string($result) ? $result : (string) $result;
 
-            Log::info('FCM notification sent to topic', [
+            \Log::info('FCM notification sent to topic', [
                 'topic' => 'all_users',
                 'message_id' => $messageId
             ]);
@@ -141,9 +192,10 @@ class FcmNotificationService
             ];
 
         } catch (\Exception $e) {
-            Log::error('Failed to send FCM notification to topic', [
+            \Log::error('Failed to send FCM notification to topic', [
                 'topic' => 'all_users',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return [
@@ -254,12 +306,34 @@ class FcmNotificationService
                 throw new \Exception('Messaging service not initialized');
             }
 
-            // Try to get project info instead of sending a message
+            // Test if we can build a simple message
+            try {
+                $testData = [
+                    'title' => 'Test',
+                    'message' => 'Test message',
+                    'type' => 'general',
+                    'priority' => 'normal'
+                ];
+                
+                $testMessage = $this->buildMessage($testData);
+                
+                \Log::info('Test message built successfully', [
+                    'message_class' => get_class($testMessage)
+                ]);
+                
+            } catch (\Exception $e) {
+                \Log::error('Error building test message', [
+                    'error' => $e->getMessage()
+                ]);
+                throw new \Exception('Failed to build test message: ' . $e->getMessage());
+            }
+
+            // Try to get project info
             $projectId = $this->projectId;
             
             return [
                 'success' => true,
-                'message' => 'Firebase connection successful - service accessible',
+                'message' => 'Firebase connection successful - service accessible and message building works',
                 'project_id' => $projectId,
                 'status_code' => 200
             ];
