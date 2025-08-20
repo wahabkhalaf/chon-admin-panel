@@ -142,7 +142,7 @@ class FcmNotificationService
 
             return [
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error' => (string) $e->getMessage(),
                 'token' => $token
             ];
         }
@@ -200,7 +200,7 @@ class FcmNotificationService
 
             return [
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error' => (string) $e->getMessage(),
                 'status_code' => 500
             ];
         }
@@ -346,7 +346,7 @@ class FcmNotificationService
 
             return [
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error' => (string) $e->getMessage(),
                 'status_code' => 500
             ];
         }
@@ -367,7 +367,7 @@ class FcmNotificationService
             ];
 
         } catch (\Exception $e) {
-            Log::error('Failed to subscribe to topic', [
+            \Log::error('Failed to subscribe to topic', [
                 'topic' => $topic,
                 'tokens' => $tokens,
                 'error' => $e->getMessage()
@@ -375,7 +375,7 @@ class FcmNotificationService
 
             return [
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error' => (string) $e->getMessage(),
                 'status_code' => 500
             ];
         }
@@ -396,7 +396,7 @@ class FcmNotificationService
             ];
 
         } catch (\Exception $e) {
-            Log::error('Failed to unsubscribe from topic', [
+            \Log::error('Failed to unsubscribe from topic', [
                 'topic' => $topic,
                 'tokens' => $tokens,
                 'error' => $e->getMessage()
@@ -404,7 +404,7 @@ class FcmNotificationService
 
             return [
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error' => (string) $e->getMessage(),
                 'status_code' => 500
             ];
         }

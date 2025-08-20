@@ -51,9 +51,15 @@ class CreateNotification extends CreateRecord
                         ->success()
                         ->send();
                 } else {
+                    $errorMessage = $result['error'] ?? 'Unknown error';
+                    // Ensure error message is a string
+                    if (is_array($errorMessage)) {
+                        $errorMessage = json_encode($errorMessage);
+                    }
+                    
                     FilamentNotification::make()
                         ->title('Failed to send notification')
-                        ->body($result['error'] ?? 'Unknown error')
+                        ->body($errorMessage)
                         ->danger()
                         ->send();
                 }

@@ -310,9 +310,15 @@ class NotificationResource extends Resource
                     ->success()
                     ->send();
             } else {
+                $errorMessage = $result['error'] ?? 'Unknown error';
+                // Ensure error message is a string
+                if (is_array($errorMessage)) {
+                    $errorMessage = json_encode($errorMessage);
+                }
+                
                 FilamentNotification::make()
                     ->title('Failed to send test notification')
-                    ->body($result['error'] ?? 'Unknown error')
+                    ->body($errorMessage)
                     ->danger()
                     ->send();
             }
@@ -358,9 +364,15 @@ class NotificationResource extends Resource
                     ->success()
                     ->send();
             } else {
+                $errorMessage = $result['error'] ?? 'Unknown error';
+                // Ensure error message is a string
+                if (is_array($errorMessage)) {
+                    $errorMessage = json_encode($errorMessage);
+                }
+                
                 FilamentNotification::make()
                     ->title('Failed to resend notification')
-                    ->body($result['error'] ?? 'Unknown error')
+                    ->body($errorMessage)
                     ->danger()
                     ->send();
             }
