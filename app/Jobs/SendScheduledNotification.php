@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Notification;
-use App\Services\ExpressApiClient;
+use App\Services\FcmNotificationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -22,7 +22,7 @@ class SendScheduledNotification implements ShouldQueue
         $this->notification = $notification;
     }
 
-    public function handle(ExpressApiClient $apiClient)
+    public function handle(FcmNotificationService $fcmService)
     {
         try {
             $notificationData = [
@@ -35,7 +35,24 @@ class SendScheduledNotification implements ShouldQueue
                 'data' => $this->notification->data ?? [],
             ];
 
-            $result = $apiClient->sendNotification($notificationData);
+            // Get FCM tokens for all players or specific target
+            $fcmTokens = [];
+            
+            if ($this->notification->target_player_id) {
+                // Send to specific player
+                $player = \App\Models\Player::find($this->notification->target_player_id);
+                if ($player && $player->fcm_token) {
+                    $fcmTokens[] = $player->fcm_token;
+                }
+            } else {
+                // Send to all active players
+                $fcmTokens = \App\Models\Player::where('is_active', true)
+                    ->whereNotNull('fcm_token')
+                    ->pluck('fcm_token')
+                    ->toArray();
+            }
+            
+            $result = $fcmService->sendNotification($notificationData, $fcmTokens);
 
             $this->notification->update([
                 'status' => $result['success'] ? 'sent' : 'failed',

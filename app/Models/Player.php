@@ -30,6 +30,7 @@ class Player extends Model
         'level',
         'experience_points',
         'is_verified',
+        'fcm_token',
         'language',
     ];
 
