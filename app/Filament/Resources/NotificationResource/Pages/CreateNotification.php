@@ -24,12 +24,12 @@ class CreateNotification extends CreateRecord
                 $fcmService = app(FcmNotificationService::class);
                 // Ensure all data is properly formatted for FCM
                 $notificationData = [
-                    'title' => (string) ($data['title'] ?? ''),
-                    'title_kurdish' => $data['title_kurdish'] ? (string) $data['title_kurdish'] : null,
-                    'message' => (string) ($data['message'] ?? ''),
-                    'message_kurdish' => $data['message_kurdish'] ? (string) $data['message_kurdish'] : null,
-                    'type' => (string) ($data['type'] ?? 'general'),
-                    'priority' => (string) ($data['priority'] ?? 'normal'),
+                    'title' => $this->ensureString($data['title'] ?? '', 'title'),
+                    'title_kurdish' => $data['title_kurdish'] ? $this->ensureString($data['title_kurdish'], 'title_kurdish') : null,
+                    'message' => $this->ensureString($data['message'] ?? '', 'message'),
+                    'message_kurdish' => $data['message_kurdish'] ? $this->ensureString($data['message_kurdish'], 'message_kurdish') : null,
+                    'type' => $this->ensureString($data['type'] ?? 'general', 'type'),
+                    'priority' => $this->ensureString($data['priority'] ?? 'normal', 'priority'),
                     'data' => $this->cleanDataForFcm($data['data'] ?? []),
                 ];
 
@@ -128,20 +128,111 @@ class CreateNotification extends CreateRecord
 
         $cleanData = [];
         foreach ($data as $key => $value) {
-            if (is_string($value) || is_numeric($value)) {
-                $cleanData[$key] = (string) $value;
-            } elseif (is_array($value)) {
-                // Convert arrays to JSON strings
-                $cleanData[$key] = json_encode($value);
-            } elseif (is_object($value)) {
-                // Convert objects to JSON strings
-                $cleanData[$key] = json_encode($value);
-            } else {
-                // Convert anything else to string
-                $cleanData[$key] = (string) $value;
+            try {
+                if (is_string($value) || is_numeric($value)) {
+                    $cleanData[$key] = (string) $value;
+                } elseif (is_array($value)) {
+                    // Convert arrays to JSON strings
+                    $jsonString = json_encode($value);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $cleanData[$key] = $jsonString;
+                    } else {
+                        \Log::warning("Failed to convert array to JSON for key: {$key}", [
+                            'value' => $value,
+                            'json_error' => json_last_error_msg()
+                        ]);
+                        // Fallback: convert array elements to strings
+                        $cleanData[$key] = '[' . implode(', ', array_map('strval', $value)) . ']';
+                    }
+                } elseif (is_object($value)) {
+                    // Convert objects to JSON strings
+                    if (method_exists($value, '__toString')) {
+                        $cleanData[$key] = (string) $value;
+                    } else {
+                        $jsonString = json_encode($value);
+                        if (json_last_error() === JSON_ERROR_NONE) {
+                            $cleanData[$key] = $jsonString;
+                        } else {
+                            \Log::warning("Failed to convert object to JSON for key: {$key}", [
+                                'value' => $value,
+                                'json_error' => json_last_error_msg()
+                            ]);
+                            $cleanData[$key] = get_class($value);
+                        }
+                    }
+                } elseif (is_bool($value)) {
+                    $cleanData[$key] = $value ? 'true' : 'false';
+                } elseif (is_null($value)) {
+                    $cleanData[$key] = '';
+                } else {
+                    // Convert anything else to string
+                    $cleanData[$key] = (string) $value;
+                }
+            } catch (\Exception $e) {
+                \Log::warning("Failed to clean data for key: {$key}", [
+                    'value' => $value,
+                    'error' => $e->getMessage()
+                ]);
+                // Skip this key if we can't convert it
+                continue;
             }
         }
 
         return $cleanData;
+    }
+
+    /**
+     * Ensures a value is a string, converting arrays and objects to JSON if needed
+     */
+    private function ensureString($value, string $fieldName): string
+    {
+        if (is_string($value)) {
+            return $value;
+        }
+        
+        if (is_numeric($value)) {
+            return (string) $value;
+        }
+        
+        if (is_array($value)) {
+            $jsonString = json_encode($value);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return $jsonString;
+            } else {
+                \Log::warning("Failed to convert array to JSON for field: {$fieldName}", [
+                    'value' => $value,
+                    'json_error' => json_last_error_msg()
+                ]);
+                return '[' . implode(', ', array_map('strval', $value)) . ']';
+            }
+        }
+        
+        if (is_object($value)) {
+            if (method_exists($value, '__toString')) {
+                return (string) $value;
+            }
+            
+            $jsonString = json_encode($value);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return $jsonString;
+            } else {
+                \Log::warning("Failed to convert object to JSON for field: {$fieldName}", [
+                    'value' => $value,
+                    'json_error' => json_last_error_msg()
+                ]);
+                return get_class($value);
+            }
+        }
+        
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+        
+        if (is_null($value)) {
+            return '';
+        }
+        
+        // Fallback for any other type
+        return (string) $value;
     }
 }

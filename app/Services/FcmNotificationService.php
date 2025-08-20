@@ -33,14 +33,22 @@ class FcmNotificationService
                 'notification_data' => $notificationData,
                 'fcm_tokens_count' => count($fcmTokens),
                 'fcm_tokens' => $fcmTokens, // Log actual tokens for debugging
-                'notification_id' => $notificationData['id'] ?? 'unknown'
+                'notification_id' => $notificationData['id'] ?? 'unknown',
+                'data_types' => [
+                    'title' => gettype($notificationData['title'] ?? ''),
+                    'message' => gettype($notificationData['message'] ?? ''),
+                    'data' => gettype($notificationData['data'] ?? [])
+                ]
             ]);
+
+            // Validate and clean notification data before processing
+            $cleanedNotificationData = $this->validateAndCleanNotificationData($notificationData);
 
             // If we have specific tokens, send to those only
             // If no tokens, send to topic (but be careful about duplicates)
             if (empty($fcmTokens)) {
                 \Log::info('No FCM tokens provided, sending to topic');
-                return $this->sendToTopic($notificationData);
+                return $this->sendToTopic($cleanedNotificationData);
             }
 
             // Send to specific tokens only (not to topic to avoid duplicates)
@@ -61,7 +69,7 @@ class FcmNotificationService
 
             foreach ($uniqueTokens as $token) {
                 try {
-                    $result = $this->sendToToken($notificationData, $token);
+                    $result = $this->sendToToken($cleanedNotificationData, $token);
                     $results[] = $result;
 
                     if ($result['success']) {
@@ -101,8 +109,8 @@ class FcmNotificationService
             ];
 
         } catch (\Exception $e) {
-            \Log::error('Exception while sending FCM notification', [
-                'notification' => $notificationData,
+            \Log::error('Failed to send FCM notification', [
+                'notification_data' => $notificationData,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -173,7 +181,12 @@ class FcmNotificationService
         try {
             \Log::info('Sending to topic: all_users', [
                 'title' => $notificationData['title'] ?? 'NO_TITLE',
-                'message' => $notificationData['message'] ?? 'NO_MESSAGE'
+                'message' => $notificationData['message'] ?? 'NO_MESSAGE',
+                'data_types' => [
+                    'title' => gettype($notificationData['title'] ?? ''),
+                    'message' => gettype($notificationData['message'] ?? ''),
+                    'data' => gettype($notificationData['data'] ?? [])
+                ]
             ]);
 
             // Validate notification data before building message
@@ -220,7 +233,8 @@ class FcmNotificationService
             \Log::error('Failed to send FCM notification to topic', [
                 'topic' => 'all_users',
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'notification_data' => $notificationData
             ]);
 
             return [
@@ -244,26 +258,9 @@ class FcmNotificationService
             $title = $notificationData['title'] ?? '';
             $messageText = $notificationData['message'] ?? '';
             
-            // Force convert everything to string
-            if (is_array($title)) {
-                $title = json_encode($title);
-            }
-            if (is_object($title)) {
-                $title = json_encode($title);
-            }
-            if (!is_string($title)) {
-                $title = (string) $title;
-            }
-            
-            if (is_array($messageText)) {
-                $messageText = json_encode($messageText);
-            }
-            if (is_object($messageText)) {
-                $messageText = json_encode($messageText);
-            }
-            if (!is_string($messageText)) {
-                $messageText = (string) $messageText;
-            }
+            // Force convert everything to string with better error handling
+            $title = $this->ensureString($title, 'title');
+            $messageText = $this->ensureString($messageText, 'message');
 
             // Create basic notification only
             $notification = Notification::create($title, $messageText);
@@ -271,13 +268,7 @@ class FcmNotificationService
 
             // Only add data if it's simple and safe
             if (!empty($notificationData['data']) && is_array($notificationData['data'])) {
-                $safeData = [];
-                foreach ($notificationData['data'] as $key => $value) {
-                    if (is_string($value) || is_numeric($value)) {
-                        $safeData[$key] = (string) $value;
-                    }
-                    // Skip arrays and objects to avoid conversion issues
-                }
+                $safeData = $this->cleanDataForFcm($notificationData['data']);
                 if (!empty($safeData)) {
                     $message = $message->withData($safeData);
                 }
@@ -293,6 +284,123 @@ class FcmNotificationService
             ]);
             throw $e;
         }
+    }
+
+    /**
+     * Validate and clean notification data to prevent array to string conversion errors
+     */
+    private function validateAndCleanNotificationData(array $notificationData): array
+    {
+        $cleaned = [];
+        
+        // Clean title
+        $cleaned['title'] = $this->ensureString($notificationData['title'] ?? '', 'title');
+        
+        // Clean message
+        $cleaned['message'] = $this->ensureString($notificationData['message'] ?? '', 'message');
+        
+        // Clean type
+        $cleaned['type'] = $this->ensureString($notificationData['type'] ?? 'general', 'type');
+        
+        // Clean priority
+        $cleaned['priority'] = $this->ensureString($notificationData['priority'] ?? 'normal', 'priority');
+        
+        // Clean data
+        if (!empty($notificationData['data']) && is_array($notificationData['data'])) {
+            $cleaned['data'] = $this->cleanDataForFcm($notificationData['data']);
+        } else {
+            $cleaned['data'] = [];
+        }
+        
+        // Copy any other fields that might be present
+        foreach ($notificationData as $key => $value) {
+            if (!isset($cleaned[$key])) {
+                $cleaned[$key] = $this->ensureString($value, $key);
+            }
+        }
+        
+        \Log::info('Notification data cleaned for FCM', [
+            'original' => $notificationData,
+            'cleaned' => $cleaned
+        ]);
+        
+        return $cleaned;
+    }
+
+    /**
+     * Ensure a value is a string, converting arrays and objects to JSON
+     */
+    private function ensureString($value, string $fieldName): string
+    {
+        if (is_string($value)) {
+            return $value;
+        }
+        
+        if (is_numeric($value)) {
+            return (string) $value;
+        }
+        
+        if (is_array($value)) {
+            $jsonString = json_encode($value);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return $jsonString;
+            } else {
+                \Log::warning("Failed to convert array to JSON for field: {$fieldName}", [
+                    'value' => $value,
+                    'json_error' => json_last_error_msg()
+                ]);
+                return '[' . implode(', ', array_map('strval', $value)) . ']';
+            }
+        }
+        
+        if (is_object($value)) {
+            if (method_exists($value, '__toString')) {
+                return (string) $value;
+            }
+            
+            $jsonString = json_encode($value);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return $jsonString;
+            } else {
+                \Log::warning("Failed to convert object to JSON for field: {$fieldName}", [
+                    'value' => $value,
+                    'json_error' => json_last_error_msg()
+                ]);
+                return get_class($value);
+            }
+        }
+        
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+        
+        if (is_null($value)) {
+            return '';
+        }
+        
+        // Fallback for any other type
+        return (string) $value;
+    }
+
+    /**
+     * Clean data for FCM - ensure all values are strings
+     */
+    private function cleanDataForFcm(array $data): array
+    {
+        $cleanData = [];
+        foreach ($data as $key => $value) {
+            try {
+                $cleanData[$key] = $this->ensureString($value, $key);
+            } catch (\Exception $e) {
+                \Log::warning("Failed to clean data for key: {$key}", [
+                    'value' => $value,
+                    'error' => $e->getMessage()
+                ]);
+                // Skip this key if we can't convert it
+                continue;
+            }
+        }
+        return $cleanData;
     }
 
     /**
@@ -366,17 +474,22 @@ class FcmNotificationService
     }
 
     /**
-     * Send notification to ALL users (topic only - for broadcasts)
+     * Send broadcast notification to topic
      */
     public function sendBroadcastNotification(array $notificationData): array
     {
         try {
             \Log::info('Sending broadcast notification to topic only');
-            return $this->sendToTopic($notificationData);
+            
+            // Clean the notification data before sending
+            $cleanedNotificationData = $this->validateAndCleanNotificationData($notificationData);
+            
+            return $this->sendToTopic($cleanedNotificationData);
         } catch (\Exception $e) {
             \Log::error('Failed to send broadcast notification', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'notification_data' => $notificationData
             ]);
 
             return [
