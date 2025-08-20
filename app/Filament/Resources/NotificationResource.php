@@ -314,11 +314,13 @@ class NotificationResource extends Resource
                 // Ensure error message is a string
                 if (is_array($errorMessage)) {
                     $errorMessage = json_encode($errorMessage);
+                } elseif (is_object($errorMessage)) {
+                    $errorMessage = json_encode($errorMessage);
                 }
                 
                 FilamentNotification::make()
                     ->title('Failed to send test notification')
-                    ->body($errorMessage)
+                    ->body((string) $errorMessage)
                     ->danger()
                     ->send();
             }
@@ -368,11 +370,13 @@ class NotificationResource extends Resource
                 // Ensure error message is a string
                 if (is_array($errorMessage)) {
                     $errorMessage = json_encode($errorMessage);
+                } elseif (is_object($errorMessage)) {
+                    $errorMessage = json_encode($errorMessage);
                 }
                 
                 FilamentNotification::make()
                     ->title('Failed to resend notification')
-                    ->body($errorMessage)
+                    ->body((string) $errorMessage)
                     ->danger()
                     ->send();
             }

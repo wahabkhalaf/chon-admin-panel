@@ -50,7 +50,10 @@ class CreateNotification extends CreateRecord
                     $result = $fcmService->sendBroadcastNotification($notificationData);
                 }
                 $data['status'] = $result['success'] ? 'sent' : 'failed';
+                
+                // Store the result directly - the model will handle JSON encoding
                 $data['api_response'] = $result;
+                
                 $data['sent_at'] = $result['success'] ? now() : null;
 
                 if ($result['success']) {
@@ -74,13 +77,13 @@ class CreateNotification extends CreateRecord
             } catch (\Exception $e) {
                 $data['status'] = 'failed';
                 $data['api_response'] = ['error' => $e->getMessage()];
-                Log::error('Error sending notification', [
+                \Log::error('Error sending notification', [
                     'error' => $e->getMessage(),
                     'data' => $data
                 ]);
                 FilamentNotification::make()
                     ->title('Error sending notification')
-                    ->body($e->getMessage())
+                    ->body((string) $e->getMessage())
                     ->danger()
                     ->send();
             }

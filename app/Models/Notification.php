@@ -30,6 +30,30 @@ class Notification extends Model
         'sent_at' => 'datetime',
     ];
 
+    /**
+     * Custom accessor for api_response to handle both JSON strings and arrays
+     */
+    public function getApiResponseAttribute($value)
+    {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            return $decoded !== null ? $decoded : $value;
+        }
+        return $value;
+    }
+
+    /**
+     * Custom mutator for api_response to ensure it's stored as JSON string
+     */
+    public function setApiResponseAttribute($value)
+    {
+        if (is_array($value) || is_object($value)) {
+            $this->attributes['api_response'] = json_encode($value);
+        } else {
+            $this->attributes['api_response'] = $value;
+        }
+    }
+
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
