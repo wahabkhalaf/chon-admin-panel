@@ -109,7 +109,7 @@ class FcmNotificationService
 
             return [
                 'success' => false,
-                'error' => (string) $e->getMessage(),
+                'error' => 'FCM Error: ' . (string) $e->getMessage(),
                 'status_code' => 500
             ];
         }
@@ -159,7 +159,7 @@ class FcmNotificationService
 
             return [
                 'success' => false,
-                'error' => (string) $e->getMessage(),
+                'error' => 'Token Error: ' . (string) $e->getMessage(),
                 'token' => $token
             ];
         }
@@ -217,7 +217,7 @@ class FcmNotificationService
 
             return [
                 'success' => false,
-                'error' => (string) $e->getMessage(),
+                'error' => 'Topic Error: ' . (string) $e->getMessage(),
                 'status_code' => 500
             ];
         }
@@ -363,7 +363,7 @@ class FcmNotificationService
 
             return [
                 'success' => false,
-                'error' => (string) $e->getMessage(),
+                'error' => 'Test Error: ' . (string) $e->getMessage(),
                 'status_code' => 500
             ];
         }
@@ -434,7 +434,7 @@ class FcmNotificationService
 
             return [
                 'success' => false,
-                'error' => (string) $e->getMessage(),
+                'error' => 'Subscribe Error: ' . (string) $e->getMessage(),
                 'status_code' => 500
             ];
         }
@@ -483,7 +483,7 @@ class FcmNotificationService
 
             return [
                 'success' => false,
-                'error' => (string) $e->getMessage(),
+                'error' => 'Unsubscribe Error: ' . (string) $e->getMessage(),
                 'status_code' => 500
             ];
         }
@@ -499,5 +499,47 @@ class FcmNotificationService
             'messaging_service' => $this->messaging ? get_class($this->messaging) : 'null',
             'service_working' => $this->messaging !== null
         ];
+    }
+
+    /**
+     * Test method to send a simple notification without complex data
+     */
+    public function testSimpleNotification(): array
+    {
+        try {
+            $testData = [
+                'title' => 'Test Notification',
+                'message' => 'This is a test notification',
+                'type' => 'general',
+                'priority' => 'normal'
+            ];
+            
+            \Log::info('Testing simple notification', $testData);
+            
+            // Try to build the message first
+            $message = $this->buildMessage($testData);
+            
+            \Log::info('Message built successfully', [
+                'message_class' => get_class($message)
+            ]);
+            
+            return [
+                'success' => true,
+                'message' => 'Simple notification test passed',
+                'data' => $testData
+            ];
+            
+        } catch (\Exception $e) {
+            \Log::error('Simple notification test failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => 'Test Failed: ' . (string) $e->getMessage(),
+                'status_code' => 500
+            ];
+        }
     }
 }
