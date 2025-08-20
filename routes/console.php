@@ -14,11 +14,27 @@ Artisan::command('fcm:test', function () {
     
     try {
         // Check if Firebase packages are installed
-        if (!class_exists('Kreait\Firebase\Contract\Messaging')) {
+        $firebaseClasses = [
+            'Kreait\Firebase\Contract\Messaging',
+            'Kreait\Firebase\Messaging',
+            'Kreait\Firebase\Messaging\CloudMessage',
+            'Kreait\Firebase\Messaging\Notification'
+        ];
+        
+        $foundClasses = [];
+        foreach ($firebaseClasses as $class) {
+            if (class_exists($class)) {
+                $foundClasses[] = $class;
+            }
+        }
+        
+        if (empty($foundClasses)) {
             $this->error('❌ Firebase packages not installed!');
             $this->info('Run: composer require kreait/laravel-firebase');
             return;
         }
+        
+        $this->info('✅ Firebase classes found: ' . implode(', ', $foundClasses));
         
         // Check if FCM service exists
         if (!class_exists('App\Services\FcmNotificationService')) {
@@ -49,18 +65,24 @@ Artisan::command('fcm:test', function () {
         
         // Try to create FCM service
         $this->info('🔄 Testing FCM service creation...');
-        $fcmService = app(\App\Services\FcmNotificationService::class);
-        $this->info('✅ FCM service created successfully');
         
-        // Test connection
-        $this->info('🔄 Testing Firebase connection...');
-        $result = $fcmService->testConnection();
-        
-        if ($result['success']) {
-            $this->info('✅ Firebase connection successful!');
-            $this->info('Message ID: ' . ($result['message_id'] ?? 'N/A'));
-        } else {
-            $this->error('❌ Firebase connection failed: ' . $result['error']);
+        try {
+            $fcmService = app(\App\Services\FcmNotificationService::class);
+            $this->info('✅ FCM service created successfully');
+            
+            // Test connection
+            $this->info('🔄 Testing Firebase connection...');
+            $result = $fcmService->testConnection();
+            
+            if ($result['success']) {
+                $this->info('✅ Firebase connection successful!');
+                $this->info('Message ID: ' . ($result['message_id'] ?? 'N/A'));
+            } else {
+                $this->error('❌ Firebase connection failed: ' . $result['error']);
+            }
+        } catch (\Exception $e) {
+            $this->error('❌ FCM service error: ' . $e->getMessage());
+            $this->error('Stack trace: ' . $e->getTraceAsString());
         }
         
     } catch (\Exception $e) {
