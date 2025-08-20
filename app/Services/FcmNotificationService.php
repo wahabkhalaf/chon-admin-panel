@@ -657,4 +657,48 @@ class FcmNotificationService
             ];
         }
     }
+
+    /**
+     * Test with the exact data structure from the form
+     */
+    public function testFormData(): array
+    {
+        try {
+            \Log::info('Testing with form data structure');
+            
+            // Simulate the exact data structure from the form
+            $testData = [
+                'title' => 'Test Title',
+                'title_kurdish' => 'Test Title Kurdish',
+                'message' => 'Test Message',
+                'message_kurdish' => 'Test Message Kurdish',
+                'type' => 'general',
+                'priority' => 'normal',
+                'data' => [
+                    'key1' => 'value1',
+                    'key2' => 'value2',
+                    'nested' => ['a' => 'b', 'c' => 'd']
+                ]
+            ];
+            
+            \Log::info('Test data prepared', $testData);
+            
+            // Try to send to topic
+            $result = $this->sendToTopic($testData);
+            
+            return $result;
+            
+        } catch (\Exception $e) {
+            \Log::error('Form data test failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => 'Form Data Test Failed: ' . (string) $e->getMessage(),
+                'status_code' => 500
+            ];
+        }
+    }
 }

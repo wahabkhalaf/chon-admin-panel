@@ -22,15 +22,27 @@ class CreateNotification extends CreateRecord
         if ($sendImmediately) {
             try {
                 $fcmService = app(FcmNotificationService::class);
+                // Ensure all data is properly formatted for FCM
                 $notificationData = [
-                    'title' => $data['title'],
-                    'title_kurdish' => $data['title_kurdish'] ?? null,
-                    'message' => $data['message'],
-                    'message_kurdish' => $data['message_kurdish'] ?? null,
-                    'type' => $data['type'],
-                    'priority' => $data['priority'],
-                    'data' => $data['data'] ?? [],
+                    'title' => (string) ($data['title'] ?? ''),
+                    'title_kurdish' => $data['title_kurdish'] ? (string) $data['title_kurdish'] : null,
+                    'message' => (string) ($data['message'] ?? ''),
+                    'message_kurdish' => $data['message_kurdish'] ? (string) $data['message_kurdish'] : null,
+                    'type' => (string) ($data['type'] ?? 'general'),
+                    'priority' => (string) ($data['priority'] ?? 'normal'),
+                    'data' => $this->cleanDataForFcm($data['data'] ?? []),
                 ];
+
+                // Log the cleaned data for debugging
+                \Log::info('Notification data prepared for FCM', [
+                    'original_data' => $data,
+                    'cleaned_notification_data' => $notificationData,
+                    'data_types' => [
+                        'title' => gettype($notificationData['title']),
+                        'message' => gettype($notificationData['message']),
+                        'data' => gettype($notificationData['data'])
+                    ]
+                ]);
                 $userIds = [];
                 if (!empty($data['user_ids'])) {
                     $userIds = collect(explode(',', (string) $data['user_ids']))
@@ -103,5 +115,33 @@ class CreateNotification extends CreateRecord
         }
 
         return Notification::create($data);
+    }
+
+    /**
+     * Clean data for FCM - ensure all values are strings
+     */
+    private function cleanDataForFcm($data): array
+    {
+        if (!is_array($data)) {
+            return [];
+        }
+
+        $cleanData = [];
+        foreach ($data as $key => $value) {
+            if (is_string($value) || is_numeric($value)) {
+                $cleanData[$key] = (string) $value;
+            } elseif (is_array($value)) {
+                // Convert arrays to JSON strings
+                $cleanData[$key] = json_encode($value);
+            } elseif (is_object($value)) {
+                // Convert objects to JSON strings
+                $cleanData[$key] = json_encode($value);
+            } else {
+                // Convert anything else to string
+                $cleanData[$key] = (string) $value;
+            }
+        }
+
+        return $cleanData;
     }
 }
