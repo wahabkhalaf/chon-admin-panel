@@ -40,7 +40,15 @@ class CreateNotification extends CreateRecord
                         ->all();
                 }
 
-                $result = $fcmService->sendNotification($notificationData, $userIds);
+                // If we have specific user IDs, send to those users only
+                // If no user IDs, send as broadcast to all users
+                if (!empty($userIds)) {
+                    \Log::info('Sending notification to specific users', ['user_ids' => $userIds]);
+                    $result = $fcmService->sendNotification($notificationData, $userIds);
+                } else {
+                    \Log::info('Sending broadcast notification to all users');
+                    $result = $fcmService->sendBroadcastNotification($notificationData);
+                }
                 $data['status'] = $result['success'] ? 'sent' : 'failed';
                 $data['api_response'] = $result;
                 $data['sent_at'] = $result['success'] ? now() : null;

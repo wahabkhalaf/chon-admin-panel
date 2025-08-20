@@ -31,18 +31,35 @@ class FcmNotificationService
             // Log the incoming data for debugging
             \Log::info('FCM sendNotification called', [
                 'notification_data' => $notificationData,
-                'fcm_tokens_count' => count($fcmTokens)
+                'fcm_tokens_count' => count($fcmTokens),
+                'fcm_tokens' => $fcmTokens, // Log actual tokens for debugging
+                'notification_id' => $notificationData['id'] ?? 'unknown'
             ]);
 
+            // If we have specific tokens, send to those only
+            // If no tokens, send to topic (but be careful about duplicates)
             if (empty($fcmTokens)) {
+                \Log::info('No FCM tokens provided, sending to topic');
                 return $this->sendToTopic($notificationData);
             }
 
+            // Send to specific tokens only (not to topic to avoid duplicates)
+            \Log::info('Sending to specific FCM tokens only');
+            
+            // Remove duplicate tokens to prevent multiple notifications
+            $uniqueTokens = array_unique($fcmTokens);
+            if (count($uniqueTokens) !== count($fcmTokens)) {
+                \Log::info('Removed duplicate FCM tokens', [
+                    'original_count' => count($fcmTokens),
+                    'unique_count' => count($uniqueTokens)
+                ]);
+            }
+            
             $results = [];
             $successCount = 0;
             $failureCount = 0;
 
-            foreach ($fcmTokens as $token) {
+            foreach ($uniqueTokens as $token) {
                 try {
                     $result = $this->sendToToken($notificationData, $token);
                     $results[] = $result;
@@ -66,7 +83,7 @@ class FcmNotificationService
                 }
             }
 
-            \Log::info('FCM notification sent', [
+            \Log::info('FCM notification sent to tokens', [
                 'total' => count($fcmTokens),
                 'success' => $successCount,
                 'failed' => $failureCount,
@@ -92,7 +109,7 @@ class FcmNotificationService
 
             return [
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error' => (string) $e->getMessage(),
                 'status_code' => 500
             ];
         }
@@ -353,12 +370,54 @@ class FcmNotificationService
     }
 
     /**
+     * Send notification to ALL users (topic only - for broadcasts)
+     */
+    public function sendBroadcastNotification(array $notificationData): array
+    {
+        try {
+            \Log::info('Sending broadcast notification to topic only');
+            return $this->sendToTopic($notificationData);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send broadcast notification', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return [
+                'success' => false,
+                'error' => (string) $e->getMessage(),
+                'status_code' => 500
+            ];
+        }
+    }
+
+    /**
      * Subscribe user to topic
      */
     public function subscribeToTopic(array $tokens, string $topic): array
     {
         try {
-            $result = $this->messaging->subscribeToTopic($topic, $tokens);
+            // Remove duplicate tokens before subscribing
+            $uniqueTokens = array_unique($tokens);
+            if (count($uniqueTokens) !== count($tokens)) {
+                \Log::warning('Duplicate tokens detected during topic subscription', [
+                    'topic' => $topic,
+                    'original_count' => count($tokens),
+                    'unique_count' => count($uniqueTokens)
+                ]);
+            }
+            
+            \Log::info('Subscribing to topic', [
+                'topic' => $topic,
+                'token_count' => count($uniqueTokens)
+            ]);
+            
+            $result = $this->messaging->subscribeToTopic($topic, $uniqueTokens);
+
+            \Log::info('Successfully subscribed to topic', [
+                'topic' => $topic,
+                'result' => $result
+            ]);
 
             return [
                 'success' => true,
@@ -387,7 +446,27 @@ class FcmNotificationService
     public function unsubscribeFromTopic(array $tokens, string $topic): array
     {
         try {
-            $result = $this->messaging->unsubscribeFromTopic($topic, $tokens);
+            // Remove duplicate tokens before unsubscribing
+            $uniqueTokens = array_unique($tokens);
+            if (count($uniqueTokens) !== count($tokens)) {
+                \Log::warning('Duplicate tokens detected during topic unsubscription', [
+                    'topic' => $topic,
+                    'original_count' => count($tokens),
+                    'unique_count' => count($uniqueTokens)
+                ]);
+            }
+            
+            \Log::info('Unsubscribing from topic', [
+                'topic' => $topic,
+                'token_count' => count($uniqueTokens)
+            ]);
+            
+            $result = $this->messaging->unsubscribeFromTopic($topic, $uniqueTokens);
+
+            \Log::info('Successfully unsubscribed from topic', [
+                'topic' => $topic,
+                'result' => $result
+            ]);
 
             return [
                 'success' => true,
@@ -408,5 +487,17 @@ class FcmNotificationService
                 'status_code' => 500
             ];
         }
+    }
+
+    /**
+     * Debug method to check FCM service status
+     */
+    public function getDebugInfo(): array
+    {
+        return [
+            'project_id' => $this->projectId,
+            'messaging_service' => $this->messaging ? get_class($this->messaging) : 'null',
+            'service_working' => $this->messaging !== null
+        ];
     }
 }
