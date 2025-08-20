@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Models\Competition;
 use App\Models\Notification;
 use App\Models\Player;
-use App\Services\ExpressApiClient;
+use App\Services\FcmNotificationService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
@@ -66,7 +66,7 @@ class NotificationDemoSeeder extends Seeder
         $this->command?->info("Created competition '{$competition->name}' (observer will send now + schedule reminder)");
 
         // 2) Send a bilingual broadcast notification immediately
-        $api = app(ExpressApiClient::class);
+        $fcmService = app(FcmNotificationService::class);
         $broadcastPayload = [
             'title' => 'Welcome to Chon',
             'title_kurdish' => 'بەخێربێن بۆ Chôn',
@@ -78,7 +78,8 @@ class NotificationDemoSeeder extends Seeder
                 'cta' => 'open_app',
             ],
         ];
-        $result = $api->sendNotification($broadcastPayload, []);
+        // Send using direct FCM broadcast
+        $result = $fcmService->sendBroadcastNotification($broadcastPayload);
         Notification::create([
             'title' => $broadcastPayload['title'],
             'title_kurdish' => $broadcastPayload['title_kurdish'],
@@ -91,7 +92,7 @@ class NotificationDemoSeeder extends Seeder
             'api_response' => $result,
             'sent_at' => now(),
         ]);
-        $this->command?->info('Broadcast-now notification sent via Express API: ' . json_encode($result));
+        $this->command?->info('Broadcast-now notification sent via direct FCM: ' . json_encode($result));
 
         // 3) Create a bilingual scheduled notification for +5 minutes (process via command)
         $scheduled = Notification::create([

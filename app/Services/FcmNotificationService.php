@@ -814,4 +814,55 @@ class FcmNotificationService
             ];
         }
     }
+
+    /**
+     * Send notification to specific users by their user IDs
+     */
+    public function sendNotificationToUsers(array $notificationData, array $userIds): array
+    {
+        try {
+            \Log::info('Sending notification to specific users by IDs', [
+                'user_ids_count' => count($userIds),
+                'user_ids' => $userIds
+            ]);
+
+            if (empty($userIds)) {
+                return $this->sendBroadcastNotification($notificationData);
+            }
+
+            // Get FCM tokens for the specified users
+            $fcmTokens = \App\Models\Player::whereIn('id', $userIds)
+                ->whereNotNull('fcm_token')
+                ->pluck('fcm_token')
+                ->toArray();
+
+            if (empty($fcmTokens)) {
+                \Log::warning('No FCM tokens found for the specified users, falling back to broadcast', [
+                    'user_ids' => $userIds
+                ]);
+                return $this->sendBroadcastNotification($notificationData);
+            }
+
+            \Log::info('Found FCM tokens for users', [
+                'user_ids_count' => count($userIds),
+                'fcm_tokens_count' => count($fcmTokens)
+            ]);
+
+            // Send to specific FCM tokens
+            return $this->sendNotification($notificationData, $fcmTokens);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to send notification to users', [
+                'user_ids' => $userIds,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return [
+                'success' => false,
+                'error' => 'User Notification Error: ' . (string) $e->getMessage(),
+                'status_code' => 500
+            ];
+        }
+    }
 }

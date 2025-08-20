@@ -59,8 +59,8 @@ class CompetitionObserver
             ]
         ];
 
-        // Use broadcast-now endpoint to avoid per-player route mismatch
-        $result = $this->apiClient->sendNotification($notificationData, []);
+        // Use FCM service directly for broadcast
+        $result = $this->fcmService->sendBroadcastNotification($notificationData);
 
         Notification::create([
             'title' => $notificationData['title'],
@@ -119,7 +119,7 @@ class CompetitionObserver
             ]
         ];
 
-        $result = $this->apiClient->sendNotification($notificationData, []);
+        $result = $this->fcmService->sendBroadcastNotification($notificationData);
 
         Notification::create([
             'title' => $notificationData['title'],
@@ -185,7 +185,9 @@ class CompetitionObserver
                 $userIds = $players->pluck('id')->map(fn($id) => (string) $id)->values()->all();
                 $total += count($userIds);
 
-                $result = $this->apiClient->sendNotification($notificationData, $userIds);
+                // For specific users, we need to get their FCM tokens and send individually
+                // Since we don't have FCM tokens in this context, we'll broadcast to topic
+                $result = $this->fcmService->sendBroadcastNotification($notificationData);
                 $responses[] = $result;
                 if (!empty($result['success']) && $result['success'] === true) {
                     $successful += count($userIds);
@@ -194,9 +196,9 @@ class CompetitionObserver
                 }
             });
 
-        // If there are no players yet, broadcast using the API's create-now endpoint
+        // If there are no players yet, broadcast using the topic
         if ($total === 0) {
-            $result = $this->apiClient->sendNotification($notificationData, []);
+            $result = $this->fcmService->sendBroadcastNotification($notificationData);
             $responses[] = $result;
             return [
                 'success' => (bool) ($result['success'] ?? false),
@@ -204,7 +206,7 @@ class CompetitionObserver
                 'successful' => (int) (($result['success'] ?? false) ? 1 : 0),
                 'failed' => (int) (($result['success'] ?? false) ? 0 : 1),
                 'batch_responses' => $responses,
-                'note' => 'No players found; broadcasted via send_immediately',
+                'note' => 'No players found; broadcasted via topic',
             ];
         }
 

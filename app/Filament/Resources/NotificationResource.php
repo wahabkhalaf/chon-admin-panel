@@ -302,7 +302,7 @@ class NotificationResource extends Resource
                     ->all();
             }
 
-            $result = $fcmService->sendNotification($notificationData, $userIds);
+            $result = $fcmService->sendNotificationToUsers($notificationData, $userIds);
 
             if ($result['success']) {
                 FilamentNotification::make()
@@ -352,7 +352,7 @@ class NotificationResource extends Resource
                 'data' => $notification->data ?? [],
             ];
 
-            $result = $fcmService->sendNotification($notificationData);
+            $result = $fcmService->sendBroadcastNotification($notificationData);
 
             $notification->update([
                 'status' => $result['success'] ? 'sent' : 'failed',

@@ -56,7 +56,7 @@ class CreateNotification extends CreateRecord
                 // If no user IDs, send as broadcast to all users
                 if (!empty($userIds)) {
                     \Log::info('Sending notification to specific users', ['user_ids' => $userIds]);
-                    $result = $fcmService->sendNotification($notificationData, $userIds);
+                    $result = $fcmService->sendNotificationToUsers($notificationData, $userIds);
                 } else {
                     \Log::info('Sending broadcast notification to all users');
                     $result = $fcmService->sendBroadcastNotification($notificationData);

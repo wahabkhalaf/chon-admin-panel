@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Notification;
-use App\Services\ExpressApiClient;
+use App\Services\FcmNotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -66,17 +66,19 @@ class NotificationSystemTest extends TestCase
         $this->assertEquals('failed', $notification->fresh()->status);
     }
 
-    public function test_express_api_client_configuration()
+    public function test_fcm_service_configuration()
     {
-        $apiClient = app(ExpressApiClient::class);
+        $fcmService = app(FcmNotificationService::class);
 
-        // Test that the client can be instantiated
-        $this->assertInstanceOf(ExpressApiClient::class, $apiClient);
+        // Test that the service can be instantiated
+        $this->assertInstanceOf(FcmNotificationService::class, $fcmService);
 
-        // Test connection method (will likely fail without actual API)
-        $result = $apiClient->testConnection();
+        // Test debug info method
+        $result = $fcmService->getDebugInfo();
         $this->assertIsArray($result);
-        $this->assertArrayHasKey('success', $result);
+        $this->assertArrayHasKey('project_id', $result);
+        $this->assertArrayHasKey('messaging_service', $result);
+        $this->assertArrayHasKey('service_working', $result);
     }
 
     public function test_notification_factory_states()
