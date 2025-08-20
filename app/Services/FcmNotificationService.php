@@ -176,6 +176,11 @@ class FcmNotificationService
                 'notification_data' => $notificationData
             ]);
 
+            // Validate notification data before building message
+            if (empty($notificationData['title']) || empty($notificationData['message'])) {
+                throw new \Exception('Title and message are required for notifications');
+            }
+
             $message = $this->buildMessage($notificationData);
             $message = $message->toTopic('all_users');
 
@@ -231,17 +236,41 @@ class FcmNotificationService
         try {
             $message = CloudMessage::new();
 
+            // Ensure title and message are strings
+            $title = $notificationData['title'] ?? '';
+            $messageText = $notificationData['message'] ?? '';
+            
+            // Convert to strings if they're not already
+            if (is_array($title)) {
+                $title = json_encode($title);
+            } elseif (!is_string($title)) {
+                $title = (string) $title;
+            }
+            
+            if (is_array($messageText)) {
+                $messageText = json_encode($messageText);
+            } elseif (!is_string($messageText)) {
+                $messageText = (string) $messageText;
+            }
+
             // Set notification content
-            $notification = Notification::create(
-                $notificationData['title'] ?? '',
-                $notificationData['message'] ?? ''
-            );
+            $notification = Notification::create($title, $messageText);
 
             $message = $message->withNotification($notification);
 
-            // Set data payload
+            // Set data payload - ensure all data is string-compatible
             if (!empty($notificationData['data'])) {
-                $message = $message->withData($notificationData['data']);
+                $cleanData = [];
+                foreach ($notificationData['data'] as $key => $value) {
+                    if (is_array($value)) {
+                        $cleanData[$key] = json_encode($value);
+                    } elseif (is_object($value)) {
+                        $cleanData[$key] = json_encode($value);
+                    } else {
+                        $cleanData[$key] = (string) $value;
+                    }
+                }
+                $message = $message->withData($cleanData);
             }
 
             // Android configuration - simplified to avoid validation errors
@@ -538,6 +567,50 @@ class FcmNotificationService
             return [
                 'success' => false,
                 'error' => 'Test Failed: ' . (string) $e->getMessage(),
+                'status_code' => 500
+            ];
+        }
+    }
+
+    /**
+     * Test method to just build a message without sending
+     */
+    public function testBuildMessage(): array
+    {
+        try {
+            $testData = [
+                'title' => 'Test Build',
+                'message' => 'Testing message building',
+                'data' => [
+                    'key1' => 'value1',
+                    'key2' => 'value2'
+                ]
+            ];
+            
+            \Log::info('Testing message building', $testData);
+            
+            $message = $this->buildMessage($testData);
+            
+            \Log::info('Message built successfully', [
+                'message_class' => get_class($message),
+                'message_object' => $message
+            ]);
+            
+            return [
+                'success' => true,
+                'message' => 'Message building test passed',
+                'message_class' => get_class($message)
+            ];
+            
+        } catch (\Exception $e) {
+            \Log::error('Message building test failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => 'Build Test Failed: ' . (string) $e->getMessage(),
                 'status_code' => 500
             ];
         }
