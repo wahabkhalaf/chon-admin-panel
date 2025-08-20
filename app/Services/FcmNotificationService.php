@@ -150,7 +150,16 @@ class FcmNotificationService
             ]);
 
             // Ensure result is a string
-            $messageId = is_string($result) ? $result : (string) $result;
+            $messageId = '';
+            if (is_string($result)) {
+                $messageId = $result;
+            } elseif (is_array($result) && isset($result['name'])) {
+                $messageId = $result['name'];
+            } elseif (is_object($result) && method_exists($result, '__toString')) {
+                $messageId = (string) $result;
+            } else {
+                $messageId = json_encode($result);
+            }
 
             return [
                 'success' => true,
@@ -213,7 +222,16 @@ class FcmNotificationService
             ]);
 
             // Ensure result is a string
-            $messageId = is_string($result) ? $result : (string) $result;
+            $messageId = '';
+            if (is_string($result)) {
+                $messageId = $result;
+            } elseif (is_array($result) && isset($result['name'])) {
+                $messageId = $result['name'];
+            } elseif (is_object($result) && method_exists($result, '__toString')) {
+                $messageId = (string) $result;
+            } else {
+                $messageId = json_encode($result);
+            }
 
             \Log::info('FCM notification sent to topic', [
                 'topic' => 'all_users',
@@ -262,14 +280,25 @@ class FcmNotificationService
             $title = $this->ensureString($title, 'title');
             $messageText = $this->ensureString($messageText, 'message');
 
+            // Validate that we have valid strings
+            if (empty($title) || empty($messageText)) {
+                throw new \Exception('Title and message must be non-empty strings');
+            }
+
             // Create basic notification only
             $notification = Notification::create($title, $messageText);
             $message = $message->withNotification($notification);
 
-            // Only add data if it's simple and safe
+            // Only add data if it's simple and safe - ensure all values are strings
             if (!empty($notificationData['data']) && is_array($notificationData['data'])) {
                 $safeData = $this->cleanDataForFcm($notificationData['data']);
                 if (!empty($safeData)) {
+                    // Double-check that all values are strings
+                    foreach ($safeData as $key => $value) {
+                        if (!is_string($value)) {
+                            $safeData[$key] = (string) $value;
+                        }
+                    }
                     $message = $message->withData($safeData);
                 }
             }
@@ -341,7 +370,8 @@ class FcmNotificationService
         }
         
         if (is_array($value)) {
-            $jsonString = json_encode($value);
+            // For arrays, try to convert to JSON first
+            $jsonString = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             if (json_last_error() === JSON_ERROR_NONE) {
                 return $jsonString;
             } else {
@@ -349,7 +379,16 @@ class FcmNotificationService
                     'value' => $value,
                     'json_error' => json_last_error_msg()
                 ]);
-                return '[' . implode(', ', array_map('strval', $value)) . ']';
+                // Fallback: convert array elements to strings and join
+                $stringValues = [];
+                foreach ($value as $item) {
+                    if (is_scalar($item)) {
+                        $stringValues[] = (string) $item;
+                    } else {
+                        $stringValues[] = json_encode($item) ?: 'null';
+                    }
+                }
+                return '[' . implode(', ', $stringValues) . ']';
             }
         }
         
@@ -358,7 +397,8 @@ class FcmNotificationService
                 return (string) $value;
             }
             
-            $jsonString = json_encode($value);
+            // Try to convert object to JSON
+            $jsonString = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             if (json_last_error() === JSON_ERROR_NONE) {
                 return $jsonString;
             } else {
@@ -378,8 +418,21 @@ class FcmNotificationService
             return '';
         }
         
-        // Fallback for any other type
-        return (string) $value;
+        if (is_resource($value)) {
+            return 'resource';
+        }
+        
+        // Fallback for any other type - force conversion to string
+        try {
+            return (string) $value;
+        } catch (\Exception $e) {
+            \Log::warning("Failed to convert value to string for field: {$fieldName}", [
+                'value' => $value,
+                'value_type' => gettype($value),
+                'error' => $e->getMessage()
+            ]);
+            return 'unknown_value';
+        }
     }
 
     /**
@@ -390,16 +443,36 @@ class FcmNotificationService
         $cleanData = [];
         foreach ($data as $key => $value) {
             try {
-                $cleanData[$key] = $this->ensureString($value, $key);
+                // Ensure the key is a string
+                $stringKey = is_string($key) ? $key : (string) $key;
+                
+                // Clean the value
+                $cleanValue = $this->ensureString($value, $stringKey);
+                
+                // Double-check that the value is actually a string
+                if (!is_string($cleanValue)) {
+                    $cleanValue = (string) $cleanValue;
+                }
+                
+                $cleanData[$stringKey] = $cleanValue;
+                
             } catch (\Exception $e) {
                 \Log::warning("Failed to clean data for key: {$key}", [
                     'value' => $value,
+                    'value_type' => gettype($value),
                     'error' => $e->getMessage()
                 ]);
-                // Skip this key if we can't convert it
+                // Skip this key if we can't convert it, but log the issue
                 continue;
             }
         }
+        
+        \Log::info('Data cleaned for FCM', [
+            'original_data' => $data,
+            'cleaned_data' => $cleanData,
+            'cleaned_count' => count($cleanData)
+        ]);
+        
         return $cleanData;
     }
 
@@ -731,6 +804,58 @@ class FcmNotificationService
             return [
                 'success' => false,
                 'error' => 'Minimal Test Failed: ' . (string) $e->getMessage(),
+                'status_code' => 500
+            ];
+        }
+    }
+
+    /**
+     * Test method to build a message with the exact data structure that's failing
+     */
+    public function testBuildMessageWithData(array $testData): array
+    {
+        try {
+            \Log::info('Testing message building with specific data', [
+                'test_data' => $testData,
+                'data_types' => [
+                    'title' => gettype($testData['title'] ?? ''),
+                    'message' => gettype($testData['message'] ?? ''),
+                    'data' => gettype($testData['data'] ?? [])
+                ]
+            ]);
+            
+            // Clean the data first
+            $cleanedData = $this->validateAndCleanNotificationData($testData);
+            
+            \Log::info('Data cleaned successfully', [
+                'cleaned_data' => $cleanedData
+            ]);
+            
+            // Try to build the message
+            $message = $this->buildMessage($cleanedData);
+            
+            \Log::info('Message built successfully with data', [
+                'message_class' => get_class($message),
+                'cleaned_data' => $cleanedData
+            ]);
+            
+            return [
+                'success' => true,
+                'message' => 'Message building with data test passed',
+                'message_class' => get_class($message),
+                'cleaned_data' => $cleanedData
+            ];
+            
+        } catch (\Exception $e) {
+            \Log::error('Message building with data test failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'test_data' => $testData
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => 'Build With Data Test Failed: ' . (string) $e->getMessage(),
                 'status_code' => 500
             ];
         }
