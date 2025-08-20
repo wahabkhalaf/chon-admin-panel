@@ -171,9 +171,9 @@ class FcmNotificationService
     protected function sendToTopic(array $notificationData): array
     {
         try {
-            \Log::info('Building FCM message for topic', [
-                'topic' => 'all_users',
-                'notification_data' => $notificationData
+            \Log::info('Sending to topic: all_users', [
+                'title' => $notificationData['title'] ?? 'NO_TITLE',
+                'message' => $notificationData['message'] ?? 'NO_MESSAGE'
             ]);
 
             // Validate notification data before building message
@@ -181,7 +181,10 @@ class FcmNotificationService
                 throw new \Exception('Title and message are required for notifications');
             }
 
+            // Build the message with strict validation
             $message = $this->buildMessage($notificationData);
+            
+            // Set topic
             $message = $message->toTopic('all_users');
 
             \Log::info('Sending FCM message to topic', [
@@ -234,110 +237,58 @@ class FcmNotificationService
     protected function buildMessage(array $notificationData): CloudMessage
     {
         try {
-            \Log::info('Building FCM message', [
-                'notification_data' => $notificationData,
-                'data_types' => [
-                    'title' => gettype($notificationData['title'] ?? 'null'),
-                    'message' => gettype($notificationData['message'] ?? 'null'),
-                    'data' => gettype($notificationData['data'] ?? 'null')
-                ]
-            ]);
-
+            // Create a very simple message - no complex configs that could cause issues
             $message = CloudMessage::new();
 
-            // Ensure title and message are strings
+            // Ensure title and message are strings - be very strict about this
             $title = $notificationData['title'] ?? '';
             $messageText = $notificationData['message'] ?? '';
             
-            // Convert to strings if they're not already
+            // Force convert everything to string
             if (is_array($title)) {
                 $title = json_encode($title);
-            } elseif (!is_string($title)) {
+            }
+            if (is_object($title)) {
+                $title = json_encode($title);
+            }
+            if (!is_string($title)) {
                 $title = (string) $title;
             }
             
             if (is_array($messageText)) {
                 $messageText = json_encode($messageText);
-            } elseif (!is_string($messageText)) {
+            }
+            if (is_object($messageText)) {
+                $messageText = json_encode($messageText);
+            }
+            if (!is_string($messageText)) {
                 $messageText = (string) $messageText;
             }
 
-            \Log::info('Creating FCM notification with', [
-                'title' => $title,
-                'message' => $messageText,
-                'title_type' => gettype($title),
-                'message_type' => gettype($messageText)
-            ]);
-
-            // Set notification content
+            // Create basic notification only
             $notification = Notification::create($title, $messageText);
-
             $message = $message->withNotification($notification);
 
-            // Set data payload - ensure all data is string-compatible
-            if (!empty($notificationData['data'])) {
-                $cleanData = [];
+            // Only add data if it's simple and safe
+            if (!empty($notificationData['data']) && is_array($notificationData['data'])) {
+                $safeData = [];
                 foreach ($notificationData['data'] as $key => $value) {
-                    if (is_array($value)) {
-                        $cleanData[$key] = json_encode($value);
-                    } elseif (is_object($value)) {
-                        $cleanData[$key] = json_encode($value);
-                    } else {
-                        $cleanData[$key] = (string) $value;
+                    if (is_string($value) || is_numeric($value)) {
+                        $safeData[$key] = (string) $value;
                     }
+                    // Skip arrays and objects to avoid conversion issues
                 }
-                $message = $message->withData($cleanData);
+                if (!empty($safeData)) {
+                    $message = $message->withData($safeData);
+                }
             }
-
-            // Android configuration - simplified to avoid validation errors
-            $androidConfig = AndroidConfig::fromArray([
-                'priority' => $this->getAndroidPriority($notificationData['priority'] ?? 'normal'),
-                'notification' => [
-                    'title' => $title, // Use the cleaned title
-                    'body' => $messageText, // Use the cleaned message
-                    'icon' => 'ic_notification',
-                    'sound' => 'default',
-                    'channel_id' => 'chon_notifications'
-                ]
-            ]);
-
-            $message = $message->withAndroidConfig($androidConfig);
-
-            // iOS configuration
-            $apnsConfig = ApnsConfig::fromArray([
-                'payload' => [
-                    'aps' => [
-                        'alert' => [
-                            'title' => $title, // Use the cleaned title
-                            'body' => $messageText // Use the cleaned message
-                        ],
-                        'sound' => 'default',
-                        'badge' => 1,
-                        'category' => 'chon_notifications'
-                    ]
-                ]
-            ]);
-
-            $message = $message->withApnsConfig($apnsConfig);
-
-            // Web push configuration
-            $webPushConfig = WebPushConfig::fromArray([
-                'notification' => [
-                    'title' => $title, // Use the cleaned title
-                    'body' => $messageText, // Use the cleaned message
-                    'icon' => '/images/notification-icon.png',
-                    'badge' => '/images/badge-icon.png',
-                    'data' => $notificationData['data'] ?? []
-                ]
-            ]);
-
-            $message = $message->withWebPushConfig($webPushConfig);
 
             return $message;
             
         } catch (\Exception $e) {
             \Log::error('Error building FCM message', [
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
                 'notification_data' => $notificationData
             ]);
             throw $e;
@@ -667,6 +618,41 @@ class FcmNotificationService
             return [
                 'success' => false,
                 'error' => 'Minimal Test Failed: ' . (string) $e->getMessage(),
+                'status_code' => 500
+            ];
+        }
+    }
+
+    /**
+     * Super simple test - just create a basic notification
+     */
+    public function testBasicNotification(): array
+    {
+        try {
+            \Log::info('Testing basic notification creation');
+            
+            // Test the exact same data structure that's failing
+            $testData = [
+                'title' => 'Test Title',
+                'message' => 'Test Message',
+                'type' => 'general',
+                'priority' => 'normal'
+            ];
+            
+            // Try to send to topic (this is what's failing)
+            $result = $this->sendToTopic($testData);
+            
+            return $result;
+            
+        } catch (\Exception $e) {
+            \Log::error('Basic notification test failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => 'Basic Test Failed: ' . (string) $e->getMessage(),
                 'status_code' => 500
             ];
         }
