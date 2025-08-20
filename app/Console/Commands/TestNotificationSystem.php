@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\ExpressApiClient;
+use App\Services\FcmNotificationService;
 use Illuminate\Console\Command;
 
 class TestNotificationSystem extends Command
@@ -19,21 +19,21 @@ class TestNotificationSystem extends Command
      *
      * @var string
      */
-    protected $description = 'Test the notification system with Express.js API';
+    protected $description = 'Test the notification system with FCM';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->info('Testing Express API Client...');
+        $this->info('Testing FCM Notification Service...');
 
         try {
-            $apiClient = app(ExpressApiClient::class);
+            $fcmService = app(FcmNotificationService::class);
 
             $this->info('Sending test notification...');
 
-            $result = $apiClient->sendNotification([
+            $result = $fcmService->sendNotification([
                 'title' => 'Test from Laravel',
                 'message' => 'This notification was sent from Laravel admin panel at ' . now()->format('Y-m-d H:i:s'),
                 'type' => 'general',

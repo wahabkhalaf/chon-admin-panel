@@ -4,7 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\NotificationResource\Pages;
 use App\Models\Notification;
-use App\Services\ExpressApiClient;
+use App\Services\FcmNotificationService;
 use Filament\Forms;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Form;
@@ -280,7 +280,7 @@ class NotificationResource extends Resource
     public static function sendTestNotification(array $data): void
     {
         try {
-            $apiClient = app(ExpressApiClient::class);
+            $fcmService = app(FcmNotificationService::class);
 
             $notificationData = [
                 'title' => $data['title'] ?? '',
@@ -302,7 +302,7 @@ class NotificationResource extends Resource
                     ->all();
             }
 
-            $result = $apiClient->sendNotification($notificationData, $userIds);
+            $result = $fcmService->sendNotification($notificationData, $userIds);
 
             if ($result['success']) {
                 FilamentNotification::make()
@@ -334,7 +334,7 @@ class NotificationResource extends Resource
     public static function resendNotification(Notification $notification): void
     {
         try {
-            $apiClient = app(ExpressApiClient::class);
+            $fcmService = app(FcmNotificationService::class);
 
             $notificationData = [
                 'title' => $notification->title,
@@ -344,7 +344,7 @@ class NotificationResource extends Resource
                 'data' => $notification->data ?? [],
             ];
 
-            $result = $apiClient->sendNotification($notificationData);
+            $result = $fcmService->sendNotification($notificationData);
 
             $notification->update([
                 'status' => $result['success'] ? 'sent' : 'failed',

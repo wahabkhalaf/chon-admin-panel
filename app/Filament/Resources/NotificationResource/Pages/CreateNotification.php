@@ -4,7 +4,7 @@ namespace App\Filament\Resources\NotificationResource\Pages;
 
 use App\Filament\Resources\NotificationResource;
 use App\Models\Notification;
-use App\Services\ExpressApiClient;
+use App\Services\FcmNotificationService;
 use Filament\Notifications\Notification as FilamentNotification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
@@ -21,7 +21,7 @@ class CreateNotification extends CreateRecord
 
         if ($sendImmediately) {
             try {
-                $apiClient = app(ExpressApiClient::class);
+                $fcmService = app(FcmNotificationService::class);
                 $notificationData = [
                     'title' => $data['title'],
                     'title_kurdish' => $data['title_kurdish'] ?? null,
@@ -40,7 +40,7 @@ class CreateNotification extends CreateRecord
                         ->all();
                 }
 
-                $result = $apiClient->sendNotification($notificationData, $userIds);
+                $result = $fcmService->sendNotification($notificationData, $userIds);
                 $data['status'] = $result['success'] ? 'sent' : 'failed';
                 $data['api_response'] = $result;
                 $data['sent_at'] = $result['success'] ? now() : null;

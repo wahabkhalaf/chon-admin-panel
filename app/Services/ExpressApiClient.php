@@ -12,7 +12,7 @@ class ExpressApiClient
 
     public function __construct()
     {
-        $this->baseUrl = rtrim(config('services.api.base_url', 'http://localhost:3001'), '/');
+        $this->baseUrl = rtrim(config('services.api.base_url', 'http://localhost:8000'), '/');
         $this->adminToken = config('services.api.admin_token');
     }
 

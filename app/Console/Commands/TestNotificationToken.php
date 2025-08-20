@@ -31,7 +31,7 @@ class TestNotificationToken extends Command
         ], JSON_PRETTY_PRINT));
 
         // Dry-run send (empty userIds allowed by API → broadcast or validation error)
-        $this->info('2) POST /api/v1/notifications/send-to-player');
+        $this->info('2) Send notification via FCM');
         $payload = [
             'userIds' => ['1'],
             'title' => 'Token Test',
@@ -43,7 +43,7 @@ class TestNotificationToken extends Command
 
         $resp = Http::withToken($token)
             ->withHeaders(['API-Version' => 'v1'])
-            ->post($baseUrl . '/api/v1/notifications/send-to-player', $payload);
+            ->post($baseUrl . '/api/notifications/send-to-player', $payload);
 
         $this->line(json_encode([
             'status' => $resp->status(),

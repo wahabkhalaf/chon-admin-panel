@@ -5,15 +5,15 @@ namespace App\Observers;
 use App\Models\Competition;
 use App\Models\Notification;
 use App\Models\Player;
-use App\Services\ExpressApiClient;
+use App\Services\FcmNotificationService;
 
 class CompetitionObserver
 {
-    protected ExpressApiClient $apiClient;
+    protected FcmNotificationService $fcmService;
 
-    public function __construct(ExpressApiClient $apiClient)
+    public function __construct(FcmNotificationService $fcmService)
     {
-        $this->apiClient = $apiClient;
+        $this->fcmService = $fcmService;
     }
 
     public function created(Competition $competition)
