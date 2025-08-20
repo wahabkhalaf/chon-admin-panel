@@ -234,6 +234,15 @@ class FcmNotificationService
     protected function buildMessage(array $notificationData): CloudMessage
     {
         try {
+            \Log::info('Building FCM message', [
+                'notification_data' => $notificationData,
+                'data_types' => [
+                    'title' => gettype($notificationData['title'] ?? 'null'),
+                    'message' => gettype($notificationData['message'] ?? 'null'),
+                    'data' => gettype($notificationData['data'] ?? 'null')
+                ]
+            ]);
+
             $message = CloudMessage::new();
 
             // Ensure title and message are strings
@@ -252,6 +261,13 @@ class FcmNotificationService
             } elseif (!is_string($messageText)) {
                 $messageText = (string) $messageText;
             }
+
+            \Log::info('Creating FCM notification with', [
+                'title' => $title,
+                'message' => $messageText,
+                'title_type' => gettype($title),
+                'message_type' => gettype($messageText)
+            ]);
 
             // Set notification content
             $notification = Notification::create($title, $messageText);
@@ -277,8 +293,8 @@ class FcmNotificationService
             $androidConfig = AndroidConfig::fromArray([
                 'priority' => $this->getAndroidPriority($notificationData['priority'] ?? 'normal'),
                 'notification' => [
-                    'title' => $notificationData['title'] ?? '',
-                    'body' => $notificationData['message'] ?? '',
+                    'title' => $title, // Use the cleaned title
+                    'body' => $messageText, // Use the cleaned message
                     'icon' => 'ic_notification',
                     'sound' => 'default',
                     'channel_id' => 'chon_notifications'
@@ -292,8 +308,8 @@ class FcmNotificationService
                 'payload' => [
                     'aps' => [
                         'alert' => [
-                            'title' => $notificationData['title'] ?? '',
-                            'body' => $notificationData['message'] ?? ''
+                            'title' => $title, // Use the cleaned title
+                            'body' => $messageText // Use the cleaned message
                         ],
                         'sound' => 'default',
                         'badge' => 1,
@@ -307,8 +323,8 @@ class FcmNotificationService
             // Web push configuration
             $webPushConfig = WebPushConfig::fromArray([
                 'notification' => [
-                    'title' => $notificationData['title'] ?? '',
-                    'body' => $notificationData['message'] ?? '',
+                    'title' => $title, // Use the cleaned title
+                    'body' => $messageText, // Use the cleaned message
                     'icon' => '/images/notification-icon.png',
                     'badge' => '/images/badge-icon.png',
                     'data' => $notificationData['data'] ?? []
@@ -611,6 +627,46 @@ class FcmNotificationService
             return [
                 'success' => false,
                 'error' => 'Build Test Failed: ' . (string) $e->getMessage(),
+                'status_code' => 500
+            ];
+        }
+    }
+
+    /**
+     * Test method to build a minimal message with no extra configs
+     */
+    public function testMinimalMessage(): array
+    {
+        try {
+            \Log::info('Testing minimal message building');
+            
+            // Create a very simple message without complex configs
+            $message = CloudMessage::new();
+            
+            // Create basic notification
+            $notification = Notification::create('Test Title', 'Test Message');
+            $message = $message->withNotification($notification);
+            
+            \Log::info('Minimal message built successfully', [
+                'message_class' => get_class($message),
+                'notification_class' => get_class($notification)
+            ]);
+            
+            return [
+                'success' => true,
+                'message' => 'Minimal message test passed',
+                'message_class' => get_class($message)
+            ];
+            
+        } catch (\Exception $e) {
+            \Log::error('Minimal message test failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => 'Minimal Test Failed: ' . (string) $e->getMessage(),
                 'status_code' => 500
             ];
         }
