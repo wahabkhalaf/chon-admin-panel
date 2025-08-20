@@ -9,7 +9,6 @@ use Kreait\Firebase\Messaging\Notification;
 use Kreait\Firebase\Messaging\WebPushConfig;
 use Kreait\Firebase\Messaging\AndroidConfig;
 use Kreait\Firebase\Messaging\ApnsConfig;
-use Kreait\Firebase\Messaging\MessageTarget;
 use Kreait\Firebase\Contract\Messaging;
 
 class FcmNotificationService
@@ -86,13 +85,16 @@ class FcmNotificationService
     {
         try {
             $message = $this->buildMessage($notificationData);
-            $message = $message->withTarget(MessageTarget::TOKEN, $token);
+            $message = $message->toToken($token);
 
             $result = $this->messaging->send($message);
 
+            // Ensure result is a string
+            $messageId = is_string($result) ? $result : (string) $result;
+
             return [
                 'success' => true,
-                'message_id' => $result,
+                'message_id' => $messageId,
                 'token' => $token
             ];
 
@@ -117,19 +119,22 @@ class FcmNotificationService
     {
         try {
             $message = $this->buildMessage($notificationData);
-            $message = $message->withTarget(MessageTarget::TOPIC, 'all_users');
+            $message = $message->toTopic('all_users');
 
             $result = $this->messaging->send($message);
 
+            // Ensure result is a string
+            $messageId = is_string($result) ? $result : (string) $result;
+
             Log::info('FCM notification sent to topic', [
                 'topic' => 'all_users',
-                'message_id' => $result
+                'message_id' => $messageId
             ]);
 
             return [
                 'success' => true,
                 'data' => [
-                    'message_id' => $result,
+                    'message_id' => $messageId,
                     'topic' => 'all_users'
                 ],
                 'status_code' => 200
@@ -240,14 +245,17 @@ class FcmNotificationService
             // Try to send a test message to verify connection
             $testMessage = CloudMessage::new()
                 ->withNotification(Notification::create('Test', 'Connection test'))
-                ->withTarget(MessageTarget::TOPIC, 'test');
+                ->toTopic('test');
 
             $result = $this->messaging->send($testMessage);
+
+            // Ensure result is a string
+            $messageId = is_string($result) ? $result : (string) $result;
 
             return [
                 'success' => true,
                 'message' => 'Firebase connection successful',
-                'message_id' => $result,
+                'message_id' => $messageId,
                 'status_code' => 200
             ];
 
