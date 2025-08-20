@@ -159,68 +159,75 @@ class FcmNotificationService
      */
     protected function buildMessage(array $notificationData): CloudMessage
     {
-        $message = CloudMessage::new();
+        try {
+            $message = CloudMessage::new();
 
-        // Set notification content
-        $notification = Notification::create(
-            $notificationData['title'] ?? '',
-            $notificationData['message'] ?? ''
-        );
+            // Set notification content
+            $notification = Notification::create(
+                $notificationData['title'] ?? '',
+                $notificationData['message'] ?? ''
+            );
 
-        $message = $message->withNotification($notification);
+            $message = $message->withNotification($notification);
 
-        // Set data payload
-        if (!empty($notificationData['data'])) {
-            $message = $message->withData($notificationData['data']);
-        }
+            // Set data payload
+            if (!empty($notificationData['data'])) {
+                $message = $message->withData($notificationData['data']);
+            }
 
-        // Android configuration
-        $androidConfig = AndroidConfig::fromArray([
-            'notification' => [
-                'title' => $notificationData['title'] ?? '',
-                'body' => $notificationData['message'] ?? '',
-                'icon' => 'ic_notification',
-                'color' => '#4CAF50',
-                'sound' => 'default',
+            // Android configuration - simplified to avoid validation errors
+            $androidConfig = AndroidConfig::fromArray([
                 'priority' => $this->getAndroidPriority($notificationData['priority'] ?? 'normal'),
-                'channel_id' => 'chon_notifications'
-            ],
-            'data' => $notificationData['data'] ?? []
-        ]);
-
-        $message = $message->withAndroidConfig($androidConfig);
-
-        // iOS configuration
-        $apnsConfig = ApnsConfig::fromArray([
-            'payload' => [
-                'aps' => [
-                    'alert' => [
-                        'title' => $notificationData['title'] ?? '',
-                        'body' => $notificationData['message'] ?? ''
-                    ],
+                'notification' => [
+                    'title' => $notificationData['title'] ?? '',
+                    'body' => $notificationData['message'] ?? '',
+                    'icon' => 'ic_notification',
                     'sound' => 'default',
-                    'badge' => 1,
-                    'category' => 'chon_notifications'
+                    'channel_id' => 'chon_notifications'
                 ]
-            ]
-        ]);
+            ]);
 
-        $message = $message->withApnsConfig($apnsConfig);
+            $message = $message->withAndroidConfig($androidConfig);
 
-        // Web push configuration
-        $webPushConfig = WebPushConfig::fromArray([
-            'notification' => [
-                'title' => $notificationData['title'] ?? '',
-                'body' => $notificationData['message'] ?? '',
-                'icon' => '/images/notification-icon.png',
-                'badge' => '/images/badge-icon.png',
-                'data' => $notificationData['data'] ?? []
-            ]
-        ]);
+            // iOS configuration
+            $apnsConfig = ApnsConfig::fromArray([
+                'payload' => [
+                    'aps' => [
+                        'alert' => [
+                            'title' => $notificationData['title'] ?? '',
+                            'body' => $notificationData['message'] ?? ''
+                        ],
+                        'sound' => 'default',
+                        'badge' => 1,
+                        'category' => 'chon_notifications'
+                    ]
+                ]
+            ]);
 
-        $message = $message->withWebPushConfig($webPushConfig);
+            $message = $message->withApnsConfig($apnsConfig);
 
-        return $message;
+            // Web push configuration
+            $webPushConfig = WebPushConfig::fromArray([
+                'notification' => [
+                    'title' => $notificationData['title'] ?? '',
+                    'body' => $notificationData['message'] ?? '',
+                    'icon' => '/images/notification-icon.png',
+                    'badge' => '/images/badge-icon.png',
+                    'data' => $notificationData['data'] ?? []
+                ]
+            ]);
+
+            $message = $message->withWebPushConfig($webPushConfig);
+
+            return $message;
+            
+        } catch (\Exception $e) {
+            \Log::error('Error building FCM message', [
+                'error' => $e->getMessage(),
+                'notification_data' => $notificationData
+            ]);
+            throw $e;
+        }
     }
 
     /**
@@ -242,16 +249,6 @@ class FcmNotificationService
     public function testConnection(): array
     {
         try {
-            // Just test if we can create a message and access the messaging service
-            $testMessage = CloudMessage::new()
-                ->withNotification(Notification::create('Test', 'Connection test'));
-
-            // Debug: Log the message structure
-            \Log::info('Test message structure', [
-                'message' => $testMessage,
-                'message_class' => get_class($testMessage)
-            ]);
-
             // Test if messaging service is accessible
             if (!$this->messaging) {
                 throw new \Exception('Messaging service not initialized');
