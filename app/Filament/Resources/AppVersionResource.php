@@ -174,7 +174,7 @@ class AppVersionResource extends Resource
             ->actions([
                 Tables\Actions\Action::make('view_store')
                     ->label('View Store')
-                    ->icon('heroicon-o-external-link')
+                    ->icon('heroicon-o-arrow-top-right-on-square')
                     ->url(fn (AppVersion $record): string => $record->app_store_url ?? '#')
                     ->openUrlInNewTab()
                     ->visible(fn (AppVersion $record): bool => !empty($record->app_store_url))
