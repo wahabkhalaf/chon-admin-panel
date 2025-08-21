@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use App\Console\Commands\TestFcmNotification;
+use Illuminate\Support\Facades\Http; // Added for Http facade
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -90,3 +91,66 @@ Artisan::command('fcm:test', function () {
         $this->error('Stack trace: ' . $e->getTraceAsString());
     }
 })->purpose('Test FCM notification system');
+
+// Test App Update API
+Artisan::command('app-update:test', function () {
+    $this->info('🧪 Testing App Update API...');
+    
+    try {
+        // Test 1: Check for updates with old version
+        $this->info('Test 1: Checking for updates with old version...');
+        $response = Http::post('http://localhost:8000/api/app-updates/check', [
+            'platform' => 'android',
+            'current_version' => '0.9.0',
+            'current_build_number' => 0,
+            'app_version' => '0.9.0',
+        ]);
+        
+        if ($response->successful()) {
+            $data = $response->json();
+            $this->info('✅ Update check successful');
+            $this->line("Response: " . json_encode($data, JSON_PRETTY_PRINT));
+        } else {
+            $this->error('❌ Update check failed: ' . $response->status());
+        }
+        
+        // Test 2: Check for updates with current version
+        $this->info('Test 2: Checking for updates with current version...');
+        $response = Http::post('http://localhost:8000/api/app-updates/check', [
+            'platform' => 'android',
+            'current_version' => '1.0.0',
+            'current_build_number' => 1,
+            'app_version' => '1.0.0',
+        ]);
+        
+        if ($response->successful()) {
+            $data = $response->json();
+            $this->info('✅ Current version check successful');
+            $this->line("Response: " . json_encode($data, JSON_PRETTY_PRINT));
+        } else {
+            $this->error('❌ Current version check failed: ' . $response->status());
+        }
+        
+        // Test 3: Check iOS platform
+        $this->info('Test 3: Checking iOS platform...');
+        $response = Http::post('http://localhost:8000/api/app-updates/check', [
+            'platform' => 'ios',
+            'current_version' => '0.9.0',
+            'current_build_number' => 0,
+            'app_version' => '0.9.0',
+        ]);
+        
+        if ($response->successful()) {
+            $data = $response->json();
+            $this->info('✅ iOS check successful');
+            $this->line("Response: " . json_encode($data, JSON_PRETTY_PRINT));
+        } else {
+            $this->error('❌ iOS check failed: ' . $response->status());
+        }
+        
+        $this->info('🎉 App Update API test completed!');
+        
+    } catch (\Exception $e) {
+        $this->error('❌ Test failed: ' . $e->getMessage());
+    }
+})->purpose('Test the App Update API endpoints');
