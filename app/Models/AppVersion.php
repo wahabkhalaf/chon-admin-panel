@@ -38,7 +38,7 @@ class AppVersion extends Model
         return $query->where('platform', $platform);
     }
 
-    public function scopeLatest($query)
+    public function scopeLatestVersion($query)
     {
         return $query->orderBy('build_number', 'desc');
     }
@@ -48,7 +48,7 @@ class AppVersion extends Model
     {
         return static::active()
             ->platform($platform)
-            ->latest()
+            ->latestVersion()
             ->first();
     }
 
