@@ -296,12 +296,8 @@ class FcmNotificationService
                     'sound' => 'default', // Use default system sound
                     'default_sound' => true,
                     'default_vibrate_timings' => true,
-                    'vibrate_timings' => ['0.1s', '0.1s', '0.1s'], // Vibration pattern
-                    'notification_priority' => 'PRIORITY_HIGH',
-                    'visibility' => 'VISIBILITY_PUBLIC',
                     'icon' => 'ic_notification', // Your app's notification icon
                     'color' => '#FF5722', // Notification color
-                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
                 ]
             ]);
             $message = $message->withAndroidConfig($androidConfig);
@@ -312,13 +308,10 @@ class FcmNotificationService
                     'aps' => [
                         'sound' => 'default', // Use default system sound
                         'badge' => 1,
-                        'content_available' => true,
-                        'mutable_content' => true,
                     ]
                 ],
                 'headers' => [
                     'apns-priority' => $this->getApnsPriority($notificationData['priority'] ?? 'normal'),
-                    'apns-push-type' => 'alert',
                 ]
             ]);
             $message = $message->withApnsConfig($apnsConfig);
