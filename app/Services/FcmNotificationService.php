@@ -289,6 +289,40 @@ class FcmNotificationService
             $notification = Notification::create($title, $messageText);
             $message = $message->withNotification($notification);
 
+            // Add Android-specific configuration for sound and vibration
+            $androidConfig = AndroidConfig::fromArray([
+                'priority' => $this->getAndroidPriority($notificationData['priority'] ?? 'normal'),
+                'notification' => [
+                    'sound' => 'default', // Use default system sound
+                    'default_sound' => true,
+                    'default_vibrate_timings' => true,
+                    'vibrate_timings' => ['0.1s', '0.1s', '0.1s'], // Vibration pattern
+                    'notification_priority' => 'PRIORITY_HIGH',
+                    'visibility' => 'VISIBILITY_PUBLIC',
+                    'icon' => 'ic_notification', // Your app's notification icon
+                    'color' => '#FF5722', // Notification color
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                ]
+            ]);
+            $message = $message->withAndroidConfig($androidConfig);
+
+            // Add iOS-specific configuration for sound
+            $apnsConfig = ApnsConfig::fromArray([
+                'payload' => [
+                    'aps' => [
+                        'sound' => 'default', // Use default system sound
+                        'badge' => 1,
+                        'content_available' => true,
+                        'mutable_content' => true,
+                    ]
+                ],
+                'headers' => [
+                    'apns-priority' => $this->getApnsPriority($notificationData['priority'] ?? 'normal'),
+                    'apns-push-type' => 'alert',
+                ]
+            ]);
+            $message = $message->withApnsConfig($apnsConfig);
+
             // Only add data if it's simple and safe - ensure all values are strings
             if (!empty($notificationData['data']) && is_array($notificationData['data'])) {
                 $safeData = $this->cleanDataForFcm($notificationData['data']);
@@ -486,6 +520,19 @@ class FcmNotificationService
             'normal' => 'normal',
             'low' => 'low',
             default => 'normal'
+        };
+    }
+
+    /**
+     * Convert priority to APNS priority
+     */
+    protected function getApnsPriority(string $priority): string
+    {
+        return match ($priority) {
+            'urgent', 'high' => '10', // Immediate delivery
+            'normal' => '5', // Normal delivery
+            'low' => '1', // Low priority
+            default => '5'
         };
     }
 

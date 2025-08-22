@@ -1,128 +1,167 @@
 # Flutter App Update Implementation Guide
 
 ## 📱 Overview
-This guide explains how to implement automatic app updates in your Flutter app using the Laravel App Update API. Your app will automatically check for updates and guide users to download the latest version.
+This guide shows you how to integrate your Flutter app with the Laravel App Update API to automatically check for updates and show update popups to users.
 
 ## 🚀 Features
-- **Automatic update checks** on app startup
-- **Beautiful update dialogs** with release notes
-- **Force update support** for critical versions
-- **Direct store redirects** to App Store/Google Play
-- **Platform-specific** update handling (iOS/Android)
-- **Offline fallback** when API is unavailable
-
----
+- **Automatic version checking** on app startup
+- **Update popup dialogs** with release notes
+- **Direct app store redirection** (iOS App Store / Google Play Store)
+- **Force update support** (prevents app usage until updated)
+- **Background update checking** with configurable intervals
 
 ## 📦 Required Dependencies
 
-### **1. Add to `pubspec.yaml`:**
+Add these to your `pubspec.yaml`:
+
 ```yaml
 dependencies:
   flutter:
     sdk: flutter
+  
+  # HTTP requests
   http: ^1.1.0
+  
+  # Local storage for caching
   shared_preferences: ^2.2.2
+  
+  # URL launcher for app store redirection
   url_launcher: ^6.2.1
+  
+  # Package info for current app version
   package_info_plus: ^4.2.0
+  
+  # Device info for platform detection
   device_info_plus: ^9.1.1
+  
+  # Local notifications (optional)
   flutter_local_notifications: ^16.3.0
 ```
 
-### **2. Install dependencies:**
-```bash
-flutter pub get
+## 🏗️ Project Structure
+
+```
+lib/
+├── models/
+│   └── app_update.dart
+├── services/
+│   └── app_update_service.dart
+├── widgets/
+│   ├── update_dialog.dart
+│   └── force_update_dialog.dart
+├── managers/
+│   └── update_manager.dart
+└── main.dart
 ```
 
----
+## 📋 Step-by-Step Implementation
 
-## 🔧 API Integration
+### 1. Create App Update Model
 
-### **1. API Endpoint:**
-```
-POST https://chonapp.net/api/app-updates/check
-```
+**`lib/models/app_update.dart`**
 
-### **2. Request Format:**
-```json
-{
-  "platform": "android",
-  "current_version": "1.0.8",
-  "current_build_number": 8,
-  "app_version": "1.0.8"
-}
-```
+```dart
+class AppUpdate {
+  final String latestVersion;
+  final int latestBuildNumber;
+  final String currentVersion;
+  final int currentBuildNumber;
+  final bool isForceUpdate;
+  final String appStoreUrl;
+  final String releaseNotes;
+  final DateTime releasedAt;
+  final String updateMessage;
 
-### **3. Response Format:**
-```json
-{
-  "success": true,
-  "update_available": true,
-  "message": "Update available",
-  "data": {
-    "latest_version": "1.1.0",
-    "latest_build_number": 10,
-    "current_version": "1.0.8",
-    "current_build_number": 8,
-    "is_force_update": false,
-    "app_store_url": "https://play.google.com/store/apps/details?id=com.chon.app",
-    "release_notes": "New features and bug fixes",
-    "released_at": "2024-01-15T10:00:00Z",
-    "update_message": "A new version is available with exciting new features!"
+  AppUpdate({
+    required this.latestVersion,
+    required this.latestBuildNumber,
+    required this.currentVersion,
+    required this.currentBuildNumber,
+    required this.isForceUpdate,
+    required this.appStoreUrl,
+    required this.releaseNotes,
+    required this.releasedAt,
+    required this.updateMessage,
+  });
+
+  factory AppUpdate.fromJson(Map<String, dynamic> json) {
+    return AppUpdate(
+      latestVersion: json['latest_version'] ?? '',
+      latestBuildNumber: json['latest_build_number'] ?? 0,
+      currentVersion: json['current_version'] ?? '',
+      currentBuildNumber: json['current_build_number'] ?? 0,
+      isForceUpdate: json['is_force_update'] ?? false,
+      appStoreUrl: json['app_store_url'] ?? '',
+      releaseNotes: json['release_notes'] ?? '',
+      releasedAt: DateTime.parse(json['released_at'] ?? DateTime.now().toIso8601String()),
+      updateMessage: json['update_message'] ?? '',
+    );
+  }
+
+  bool get hasUpdate => latestBuildNumber > currentBuildNumber;
+  bool get isMajorUpdate => _isMajorVersionUpdate();
+  
+  bool _isMajorVersionUpdate() {
+    final current = currentVersion.split('.');
+    final latest = latestVersion.split('.');
+    
+    if (current.length >= 2 && latest.length >= 2) {
+      return int.parse(latest[0]) > int.parse(current[0]) || 
+             int.parse(latest[1]) > int.parse(current[1]);
+    }
+    return false;
   }
 }
 ```
 
----
+### 2. Create App Update Service
 
-## 📱 Implementation
-
-### **1. Create App Update Service (`lib/services/app_update_service.dart`):**
+**`lib/services/app_update_service.dart`**
 
 ```dart
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../models/app_update.dart';
 
 class AppUpdateService {
-  static const String _baseUrl = 'https://chonapp.net';
-  static const String _apiEndpoint = '/api/app-updates/check';
+  static const String _baseUrl = 'https://chonapp.net/api';
+  static const String _checkUpdateEndpoint = '/app-updates/check';
   
-  // Cache key for last update check
-  static const String _lastCheckKey = 'last_update_check';
-  static const String _lastVersionKey = 'last_checked_version';
+  // Cache duration (24 hours)
+  static const Duration _cacheDuration = Duration(hours: 24);
   
-  // Minimum interval between update checks (24 hours)
-  static const Duration _minCheckInterval = Duration(hours: 24);
+  // HTTP client
+  final http.Client _httpClient = http.Client();
 
   /// Check for app updates
-  static Future<AppUpdateResult?> checkForUpdates({
-    bool forceCheck = false,
-    bool showDialog = true,
-  }) async {
+  Future<AppUpdate?> checkForUpdates() async {
     try {
-      // Check if we should skip this check
-      if (!forceCheck && await _shouldSkipCheck()) {
-        return null;
-      }
-
       // Get current app info
       final packageInfo = await PackageInfo.fromPlatform();
-      final deviceInfo = await _getDeviceInfo();
+      final deviceInfo = DeviceInfoPlugin();
       
+      String platform;
+      if (Platform.isAndroid) {
+        platform = 'android';
+      } else if (Platform.isIOS) {
+        platform = 'ios';
+      } else {
+        throw Exception('Unsupported platform');
+      }
+
       // Prepare request data
       final requestData = {
-        'platform': deviceInfo['platform'],
+        'platform': platform,
         'current_version': packageInfo.version,
-        'current_build_number': int.tryParse(packageInfo.buildNumber) ?? 0,
+        'current_build_number': int.parse(packageInfo.buildNumber),
         'app_version': packageInfo.version,
       };
 
       // Make API request
-      final response = await http.post(
-        Uri.parse('$_baseUrl$_apiEndpoint'),
+      final response = await _httpClient.post(
+        Uri.parse('$_baseUrl$_checkUpdateEndpoint'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -131,195 +170,242 @@ class AppUpdateService {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final responseData = jsonDecode(response.body);
         
-        if (data['success'] == true) {
-          // Cache the check
-          await _cacheUpdateCheck(packageInfo.version);
-          
-          if (data['update_available'] == true) {
-            final updateInfo = AppUpdateInfo.fromJson(data['data']);
-            
-            if (showDialog) {
-              await _showUpdateDialog(updateInfo);
-            }
-            
-            return AppUpdateResult(
-              updateAvailable: true,
-              updateInfo: updateInfo,
-            );
-          } else {
-            return AppUpdateResult(
-              updateAvailable: false,
-              updateInfo: null,
-            );
-          }
-        } else {
-          throw Exception('API returned success: false');
+        if (responseData['success'] == true && responseData['update_available'] == true) {
+          return AppUpdate.fromJson(responseData['data']);
         }
-      } else {
-        throw Exception('HTTP ${response.statusCode}: ${response.body}');
       }
+      
+      return null;
     } catch (e) {
       print('Error checking for updates: $e');
       return null;
     }
   }
 
-  /// Get device platform info
-  static Future<Map<String, String>> _getDeviceInfo() async {
-    final deviceInfo = DeviceInfoPlugin();
+  /// Check if update check is needed (based on cache)
+  Future<bool> shouldCheckForUpdates() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastCheck = prefs.getInt('last_update_check') ?? 0;
+    final now = DateTime.now().millisecondsSinceEpoch;
     
-    if (Platform.isAndroid) {
-      final androidInfo = await deviceInfo.androidInfo;
-      return {'platform': 'android'};
-    } else if (Platform.isIOS) {
-      final iosInfo = await deviceInfo.iosInfo;
-      return {'platform': 'ios'};
-    } else {
-      return {'platform': 'unknown'};
-    }
+    return (now - lastCheck) > _cacheDuration.inMilliseconds;
   }
 
-  /// Check if we should skip this update check
-  static Future<bool> _shouldSkipCheck() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final lastCheck = prefs.getString(_lastCheckKey);
-      final lastVersion = prefs.getString(_lastVersionKey);
-      
-      if (lastCheck == null || lastVersion == null) {
-        return false;
-      }
-
-      final lastCheckTime = DateTime.parse(lastCheck);
-      final packageInfo = await PackageInfo.fromPlatform();
-      
-      // Skip if:
-      // 1. Not enough time has passed since last check
-      // 2. App version hasn't changed
-      return DateTime.now().difference(lastCheckTime) < _minCheckInterval ||
-             lastVersion == packageInfo.version;
-    } catch (e) {
-      return false;
-    }
+  /// Cache the last update check time
+  Future<void> cacheUpdateCheck() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('last_update_check', DateTime.now().millisecondsSinceEpoch);
   }
 
-  /// Cache the update check
-  static Future<void> _cacheUpdateCheck(String version) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_lastCheckKey, DateTime.now().toIso8601String());
-      await prefs.setString(_lastVersionKey, version);
-    } catch (e) {
-      print('Error caching update check: $e');
-    }
-  }
-
-  /// Show update dialog
-  static Future<void> _showUpdateDialog(AppUpdateInfo updateInfo) async {
-    // This will be implemented in the UI section
-    // For now, just print the update info
-    print('Update available: ${updateInfo.latestVersion}');
-  }
-}
-
-/// App update result
-class AppUpdateResult {
-  final bool updateAvailable;
-  final AppUpdateInfo? updateInfo;
-
-  AppUpdateResult({
-    required this.updateAvailable,
-    this.updateInfo,
-  });
-}
-
-/// App update information
-class AppUpdateInfo {
-  final String latestVersion;
-  final int latestBuildNumber;
-  final String currentVersion;
-  final int currentBuildNumber;
-  final bool isForceUpdate;
-  final String? appStoreUrl;
-  final String? releaseNotes;
-  final DateTime? releasedAt;
-  final String updateMessage;
-
-  AppUpdateInfo({
-    required this.latestVersion,
-    required this.latestBuildNumber,
-    required this.currentVersion,
-    required this.currentBuildNumber,
-    required this.isForceUpdate,
-    this.appStoreUrl,
-    this.releaseNotes,
-    this.releasedAt,
-    required this.updateMessage,
-  });
-
-  factory AppUpdateInfo.fromJson(Map<String, dynamic> json) {
-    return AppUpdateInfo(
-      latestVersion: json['latest_version'] ?? '',
-      latestBuildNumber: json['latest_build_number'] ?? 0,
-      currentVersion: json['current_version'] ?? '',
-      currentBuildNumber: json['current_build_number'] ?? 0,
-      isForceUpdate: json['is_force_update'] ?? false,
-      appStoreUrl: json['app_store_url'],
-      releaseNotes: json['release_notes'],
-      releasedAt: json['released_at'] != null 
-          ? DateTime.tryParse(json['released_at']) 
-          : null,
-      updateMessage: json['update_message'] ?? '',
-    );
-  }
-
-  /// Check if this is a major version update
-  bool get isMajorUpdate {
-    final current = currentVersion.split('.');
-    final latest = latestVersion.split('.');
-    
-    if (current.length >= 1 && latest.length >= 1) {
-      return int.tryParse(latest[0]) ?? 0 > int.tryParse(current[0]) ?? 0;
-    }
-    return false;
-  }
-
-  /// Check if this is a minor version update
-  bool get isMinorUpdate {
-    final current = currentVersion.split('.');
-    final latest = latestVersion.split('.');
-    
-    if (current.length >= 2 && latest.length >= 2) {
-      return int.tryParse(latest[1]) ?? 0 > int.tryParse(current[1]) ?? 0;
-    }
-    return false;
+  /// Clear update check cache (force check)
+  Future<void> clearUpdateCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('last_update_check');
   }
 }
 ```
 
-### **2. Create Update Dialog UI (`lib/widgets/app_update_dialog.dart`):**
+### 3. Create Update Dialog Widget
+
+**`lib/widgets/update_dialog.dart`**
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../services/app_update_service.dart';
+import '../models/app_update.dart';
 
-class AppUpdateDialog extends StatelessWidget {
-  final AppUpdateInfo updateInfo;
-  final bool isForceUpdate;
+class UpdateDialog extends StatelessWidget {
+  final AppUpdate update;
+  final VoidCallback? onSkip;
 
-  const AppUpdateDialog({
+  const UpdateDialog({
     Key? key,
-    required this.updateInfo,
-    this.isForceUpdate = false,
+    required this.update,
+    this.onSkip,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: Row(
+        children: [
+          Icon(
+            Icons.system_update,
+            color: Colors.blue,
+            size: 28,
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Update Available! 🚀',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue[700],
+              ),
+            ),
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'A new version is available:',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: 8),
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue[200]!),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.new_releases, color: Colors.blue[600], size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Version ${update.latestVersion} (Build ${update.latestBuildNumber})',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue[700],
+                      ),
+                    ),
+                  ],
+                ),
+                if (update.isMajorUpdate) ...[
+                  SizedBox(height: 8),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[100],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'MAJOR UPDATE',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange[800],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          SizedBox(height: 16),
+          if (update.releaseNotes.isNotEmpty) ...[
+            Text(
+              'What\'s New:',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 8),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: Text(
+                update.releaseNotes,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+          ],
+          Text(
+            update.updateMessage,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        if (onSkip != null && !update.isForceUpdate)
+          TextButton(
+            onPressed: onSkip,
+            child: Text(
+              'Skip for now',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ),
+        ElevatedButton.icon(
+          onPressed: () => _launchAppStore(update.appStoreUrl),
+          icon: Icon(Icons.download),
+          label: Text('Update Now'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue[600],
+            foregroundColor: Colors.white,
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _launchAppStore(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Could not launch $url';
+      }
+    } catch (e) {
+      print('Error launching app store: $e');
+      // Fallback: show error dialog
+      // You can implement a fallback dialog here
+    }
+  }
+}
+```
+
+### 4. Create Force Update Dialog Widget
+
+**`lib/widgets/force_update_dialog.dart`**
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../models/app_update.dart';
+
+class ForceUpdateDialog extends StatelessWidget {
+  final AppUpdate update;
+
+  const ForceUpdateDialog({
+    Key? key,
+    required this.update,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async => !isForceUpdate, // Prevent closing if force update
+      onWillPop: () async => false, // Prevent back button
       child: AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -327,17 +413,18 @@ class AppUpdateDialog extends StatelessWidget {
         title: Row(
           children: [
             Icon(
-              Icons.system_update,
-              color: Colors.blue,
+              Icons.warning_amber_rounded,
+              color: Colors.orange,
               size: 28,
             ),
             SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Update Available',
+                'Update Required! ⚠️',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  color: Colors.orange[700],
                 ),
               ),
             ),
@@ -347,108 +434,75 @@ class AppUpdateDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Version info
             Container(
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: Colors.orange[50],
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange[200]!),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.blue),
+                  Icon(Icons.info_outline, color: Colors.orange[600], size: 20),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'New version ${updateInfo.latestVersion} is available!',
+                      'This update is required to continue using the app.',
                       style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.blue.shade700,
+                        fontSize: 14,
+                        color: Colors.orange[700],
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            
             SizedBox(height: 16),
-            
-            // Release notes
-            if (updateInfo.releaseNotes?.isNotEmpty == true) ...[
+            Text(
+              'New Version: ${update.latestVersion} (Build ${update.latestBuildNumber})',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 8),
+            if (update.releaseNotes.isNotEmpty) ...[
               Text(
                 'What\'s New:',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               SizedBox(height: 8),
-              Text(
-                updateInfo.releaseNotes!,
-                style: TextStyle(
-                  color: Colors.grey.shade700,
-                  height: 1.4,
-                ),
-              ),
-              SizedBox(height: 16),
-            ],
-            
-            // Update message
-            Text(
-              updateInfo.updateMessage,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-            
-            if (isForceUpdate) ...[
-              SizedBox(height: 16),
               Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
+                  color: Colors.grey[50],
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.shade200),
+                  border: Border.all(color: Colors.grey[300]!),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.warning, color: Colors.orange),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'This update is required to continue using the app.',
-                        style: TextStyle(
-                          color: Colors.orange.shade700,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  update.releaseNotes,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                  ),
                 ),
               ),
             ],
           ],
         ),
         actions: [
-          if (!isForceUpdate) ...[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'Later',
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
-          ],
           ElevatedButton.icon(
-            onPressed: () => _openAppStore(context),
+            onPressed: () => _launchAppStore(update.appStoreUrl),
             icon: Icon(Icons.download),
             label: Text('Update Now'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
+              backgroundColor: Colors.orange[600],
               foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           ),
         ],
@@ -456,45 +510,107 @@ class AppUpdateDialog extends StatelessWidget {
     );
   }
 
-  /// Open app store for update
-  Future<void> _openAppStore(BuildContext context) async {
+  Future<void> _launchAppStore(String url) async {
     try {
-      final url = updateInfo.appStoreUrl;
-      if (url != null && await canLaunchUrl(Uri.parse(url))) {
-        await launchUrl(
-          Uri.parse(url),
-          mode: LaunchMode.externalApplication,
-        );
-        
-        // Close dialog
-        if (context.mounted) {
-          Navigator.of(context).pop();
-        }
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
-        // Show error if can't open store
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Could not open app store'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        throw 'Could not launch $url';
       }
     } catch (e) {
-      print('Error opening app store: $e');
+      print('Error launching app store: $e');
     }
   }
 }
 ```
 
-### **3. Integrate with Main App (`lib/main.dart`):**
+### 5. Create Update Manager
+
+**`lib/managers/update_manager.dart`**
 
 ```dart
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'services/app_update_service.dart';
-import 'widgets/app_update_dialog.dart';
+import '../models/app_update.dart';
+import '../services/app_update_service.dart';
+import '../widgets/update_dialog.dart';
+import '../widgets/force_update_dialog.dart';
+
+class UpdateManager {
+  final AppUpdateService _updateService = AppUpdateService();
+  final BuildContext context;
+  
+  UpdateManager(this.context);
+
+  /// Check for updates and show dialog if needed
+  Future<void> checkForUpdates({bool forceCheck = false}) async {
+    try {
+      // Check if we should check for updates
+      if (!forceCheck && !await _updateService.shouldCheckForUpdates()) {
+        return;
+      }
+
+      // Check for updates
+      final update = await _updateService.checkForUpdates();
+      
+      if (update != null) {
+        // Cache the check time
+        await _updateService.cacheUpdateCheck();
+        
+        // Show appropriate dialog
+        if (update.isForceUpdate) {
+          await _showForceUpdateDialog(update);
+        } else {
+          await _showUpdateDialog(update);
+        }
+      }
+    } catch (e) {
+      print('Error in update manager: $e');
+    }
+  }
+
+  /// Show regular update dialog
+  Future<void> _showUpdateDialog(AppUpdate update) async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => UpdateDialog(
+        update: update,
+        onSkip: () {
+          Navigator.of(context).pop();
+        },
+      ),
+    );
+  }
+
+  /// Show force update dialog
+  Future<void> _showForceUpdateDialog(AppUpdate update) async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => ForceUpdateDialog(update: update),
+    );
+  }
+
+  /// Force check for updates (ignores cache)
+  Future<void> forceCheckForUpdates() async {
+    await checkForUpdates(forceCheck: true);
+  }
+
+  /// Clear update cache
+  Future<void> clearCache() async {
+    await _updateService.clearUpdateCache();
+  }
+}
+```
+
+### 6. Integrate with Main App
+
+**`lib/main.dart`**
+
+```dart
+import 'package:flutter/material.dart';
+import 'managers/update_manager.dart';
 
 void main() {
   runApp(MyApp());
@@ -507,7 +623,7 @@ class MyApp extends StatelessWidget {
       title: 'Chon App',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        useMaterial3: true,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: MyHomePage(),
     );
@@ -520,40 +636,17 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  late UpdateManager _updateManager;
+
   @override
   void initState() {
     super.initState();
+    _updateManager = UpdateManager(context);
     
     // Check for updates when app starts
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkForUpdates();
+      _updateManager.checkForUpdates();
     });
-  }
-
-  /// Check for app updates
-  Future<void> _checkForUpdates() async {
-    try {
-      final result = await AppUpdateService.checkForUpdates(
-        forceCheck: false,
-        showDialog: false, // We'll show it manually
-      );
-
-      if (result?.updateAvailable == true && result?.updateInfo != null) {
-        // Show update dialog
-        if (mounted) {
-          showDialog(
-            context: context,
-            barrierDismissible: !result!.updateInfo!.isForceUpdate,
-            builder: (context) => AppUpdateDialog(
-              updateInfo: result.updateInfo!,
-              isForceUpdate: result.updateInfo!.isForceUpdate,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      print('Error checking for updates: $e');
-    }
   }
 
   @override
@@ -562,9 +655,10 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text('Chon App'),
         actions: [
+          // Manual update check button
           IconButton(
-            icon: Icon(Icons.system_update),
-            onPressed: _checkForUpdates,
+            icon: Icon(Icons.refresh),
+            onPressed: () => _updateManager.forceCheckForUpdates(),
             tooltip: 'Check for updates',
           ),
         ],
@@ -573,32 +667,19 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.phone_android,
-              size: 100,
-              color: Colors.blue,
-            ),
-            SizedBox(height: 20),
             Text(
               'Welcome to Chon App!',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(context).textTheme.headline4,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => _updateManager.forceCheckForUpdates(),
+              child: Text('Check for Updates'),
             ),
             SizedBox(height: 10),
-            Text(
-              'Your app is up to date',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-            SizedBox(height: 30),
-            ElevatedButton.icon(
-              onPressed: _checkForUpdates,
-              icon: Icon(Icons.refresh),
-              label: Text('Check for Updates'),
+            ElevatedButton(
+              onPressed: () => _updateManager.clearCache(),
+              child: Text('Clear Cache'),
             ),
           ],
         ),
@@ -608,142 +689,170 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 ```
 
----
-
 ## 🔧 Configuration
 
-### **1. Android Configuration (`android/app/src/main/AndroidManifest.xml`):**
+### 1. Platform Configuration
+
+**Android (`android/app/src/main/AndroidManifest.xml`)**
 ```xml
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Add internet permission -->
-    <uses-permission android:name="android.permission.INTERNET" />
-    
-    <application
-        android:label="Chon App"
-        android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
-        <!-- ... rest of your manifest ... -->
-    </application>
-</manifest>
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 ```
 
-### **2. iOS Configuration (`ios/Runner/Info.plist`):**
+**iOS (`ios/Runner/Info.plist`)**
 ```xml
-<key>CFBundleURLTypes</key>
+<key>LSApplicationQueriesSchemes</key>
 <array>
-    <dict>
-        <key>CFBundleURLName</key>
-        <string>com.chon.app</string>
-        <key>CFBundleURLSchemes</key>
-        <array>
-            <string>chonapp</string>
-        </array>
-    </dict>
+    <string>itms-apps</string>
 </array>
 ```
 
----
+### 2. App Store URLs
 
-## 🧪 Testing
+Make sure your app store URLs are correct in the admin panel:
 
-### **1. Test with Different Versions:**
+- **Android**: `https://play.google.com/store/apps/details?id=YOUR_PACKAGE_NAME`
+- **iOS**: `https://apps.apple.com/app/idYOUR_APP_ID`
+
+## 🚀 Usage Examples
+
+### 1. Check for Updates on App Start
 ```dart
-// Test with old version
-final result = await AppUpdateService.checkForUpdates(
-  forceCheck: true,
-  showDialog: true,
-);
+@override
+void initState() {
+  super.initState();
+  _updateManager = UpdateManager(context);
+  
+  // Check for updates when app starts
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _updateManager.checkForUpdates();
+  });
+}
 ```
 
-### **2. Test Force Update:**
+### 2. Manual Update Check
 ```dart
-// In your admin panel, set is_force_update: true
-// Then test with an older version
+ElevatedButton(
+  onPressed: () => _updateManager.forceCheckForUpdates(),
+  child: Text('Check for Updates'),
+)
 ```
 
-### **3. Test Offline:**
+### 3. Clear Update Cache
 ```dart
-// Disconnect internet and test
-// Should handle gracefully
+ElevatedButton(
+  onPressed: () => _updateManager.clearCache(),
+  child: Text('Clear Cache'),
+)
 ```
 
----
+## 📱 How It Works
 
-## 🚀 Deployment
-
-### **1. Build Release:**
-```bash
-# Android
-flutter build apk --release
-
-# iOS
-flutter build ios --release
+### 1. **App Startup Flow:**
+```
+App Starts → Check Cache → API Call → Show Dialog → User Action
 ```
 
-### **2. Update Version in `pubspec.yaml`:**
-```yaml
-version: 1.1.0+10  # version+build_number
+### 2. **Update Check Process:**
+- App gets current version from `package_info_plus`
+- Sends request to `/api/app-updates/check`
+- Compares versions and shows appropriate dialog
+- Caches check time to avoid excessive API calls
+
+### 3. **Dialog Types:**
+- **Regular Update**: User can skip or update
+- **Force Update**: User must update to continue
+
+### 4. **App Store Redirection:**
+- Opens appropriate store (Google Play / App Store)
+- Uses `url_launcher` package
+- Handles errors gracefully
+
+## 🎯 Testing
+
+### 1. **Test with Old Version:**
+```dart
+// In your app, temporarily change version to 1.0.8
+// This will trigger update popup
 ```
 
-### **3. Create New App Version in Admin Panel:**
-- Go to `https://chonapp.net/admin`
-- Navigate to "App Versions"
-- Create new version with:
-  - Platform: android/ios
-  - Version: 1.1.0
-  - Build Number: 10
-  - Release Notes: "New features and bug fixes"
-  - App Store URL: Your store link
+### 2. **Test Force Update:**
+```dart
+// In admin panel, set a version as "Force Update"
+// App will show force update dialog
+```
 
----
-
-## 📱 Features Summary
-
-✅ **Automatic Update Checks** - On app startup  
-✅ **Smart Caching** - Avoids unnecessary API calls  
-✅ **Beautiful UI** - Material Design update dialogs  
-✅ **Force Updates** - Critical version enforcement  
-✅ **Store Integration** - Direct app store redirects  
-✅ **Offline Handling** - Graceful error handling  
-✅ **Platform Detection** - iOS/Android specific logic  
-✅ **Version Comparison** - Smart update detection  
-
----
+### 3. **Test Cache:**
+```dart
+// Check updates, then check again immediately
+// Second check should be skipped due to cache
+```
 
 ## 🔍 Troubleshooting
 
-### **Common Issues:**
+### Common Issues:
 
-1. **API Returns "No updates available"**
-   - Check if app versions are seeded in database
-   - Verify build numbers are correct
-   - Check if versions are marked as active
+1. **No Update Dialog:**
+   - Check API endpoint URL
+   - Verify app version format
+   - Check network connectivity
 
-2. **Update Dialog Not Showing**
-   - Ensure `showDialog: true` is set
-   - Check if app is mounted when calling
-   - Verify API response format
+2. **App Store Not Opening:**
+   - Verify app store URLs in admin panel
+   - Check platform permissions
+   - Test with `url_launcher` directly
 
-3. **Store Link Not Opening**
-   - Check `app_store_url` in database
-   - Verify URL format is correct
-   - Test on real device (not simulator)
+3. **Cache Issues:**
+   - Use `clearCache()` method
+   - Check shared preferences
+   - Verify cache duration
 
-4. **Build Number Issues**
-   - Ensure `build_number` is integer in database
-   - Check `pubspec.yaml` version format
-   - Verify version comparison logic
+## 📚 API Reference
 
----
+### Check for Updates
+```
+POST /api/app-updates/check
+Content-Type: application/json
 
-## 📞 Support
+{
+  "platform": "android|ios",
+  "current_version": "1.0.8",
+  "current_build_number": 8,
+  "app_version": "1.0.8"
+}
+```
 
-If you encounter any issues:
-1. Check the Laravel logs: `storage/logs/laravel.log`
-2. Verify API endpoint: `https://chonapp.net/api/app-updates/check`
-3. Test with Postman or curl
-4. Check admin panel for app version configuration
+### Response Format
+```json
+{
+  "success": true,
+  "update_available": true,
+  "message": "Update available",
+  "data": {
+    "latest_version": "2.0.0",
+    "latest_build_number": 20,
+    "current_version": "1.0.8",
+    "current_build_number": 8,
+    "is_force_update": false,
+    "app_store_url": "https://...",
+    "release_notes": "New features...",
+    "released_at": "2025-08-21T17:02:46.000000Z",
+    "update_message": "A new version is available..."
+  }
+}
+```
 
----
+## 🎉 That's It!
 
-**🎉 Your Flutter app is now ready for automatic updates!**
+Your Flutter app is now fully integrated with the app update system! Users will automatically see update popups when new versions are available, and they can easily navigate to the app store to download updates.
+
+The system handles:
+- ✅ Automatic update checking
+- ✅ Smart caching (24-hour intervals)
+- ✅ Force update enforcement
+- ✅ Platform-specific app store redirection
+- ✅ Beautiful update dialogs
+- ✅ Release notes display
+- ✅ Error handling and fallbacks
+
+Happy coding! 🚀
