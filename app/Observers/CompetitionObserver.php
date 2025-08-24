@@ -78,10 +78,10 @@ class CompetitionObserver
 
     protected function scheduleCompetitionReminder(Competition $competition)
     {
-        // Schedule 5-minute reminder notification
+        // Send 5-minute reminder notification immediately
         $fiveMinReminderTime = \Carbon\Carbon::parse($competition->start_time)->subMinutes(5);
         if ($fiveMinReminderTime->isFuture()) {
-            Notification::create([
+            $fiveMinNotificationData = [
                 'title' => 'Competition Starting Soon! ⏰',
                 'title_kurdish' => 'بەم دوایە پێشبڕکێ دەستپێدەکات! ⏰',
                 'message' => "\"{$competition->name}\" starts in 5 minutes! Join now!",
@@ -96,16 +96,32 @@ class CompetitionObserver
                     'descriptionKurdish' => $competition->description_kurdish,
                     'startTime' => $competition->start_time,
                     'gameType' => $competition->game_type,
-                ],
+                ]
+            ];
+
+            // Send via FCM immediately
+            $fiveMinResult = $this->fcmService->sendBroadcastNotification($fiveMinNotificationData);
+
+            // Create notification record
+            Notification::create([
+                'title' => $fiveMinNotificationData['title'],
+                'title_kurdish' => $fiveMinNotificationData['title_kurdish'],
+                'message' => $fiveMinNotificationData['message'],
+                'message_kurdish' => $fiveMinNotificationData['message_kurdish'],
+                'type' => $fiveMinNotificationData['type'],
+                'priority' => $fiveMinNotificationData['priority'],
+                'data' => $fiveMinNotificationData['data'],
                 'scheduled_at' => $fiveMinReminderTime,
-                'status' => 'pending',
+                'status' => $fiveMinResult['success'] ? 'sent' : 'failed',
+                'api_response' => $fiveMinResult,
+                'sent_at' => now(),
             ]);
         }
 
-        // Schedule 1-minute reminder notification
+        // Send 1-minute reminder notification immediately
         $oneMinReminderTime = \Carbon\Carbon::parse($competition->start_time)->subMinute();
         if ($oneMinReminderTime->isFuture()) {
-            Notification::create([
+            $oneMinNotificationData = [
                 'title' => 'Competition Starting in 1 Minute! 🚨',
                 'title_kurdish' => 'پێشبڕکێ لە ١ خولەکدا دەستپێدەکات! 🚨',
                 'message' => "\"{$competition->name}\" starts in 1 minute! Get ready!",
@@ -120,9 +136,25 @@ class CompetitionObserver
                     'descriptionKurdish' => $competition->description_kurdish,
                     'startTime' => $competition->start_time,
                     'gameType' => $competition->game_type,
-                ],
+                ]
+            ];
+
+            // Send via FCM immediately
+            $oneMinResult = $this->fcmService->sendBroadcastNotification($oneMinNotificationData);
+
+            // Create notification record
+            Notification::create([
+                'title' => $oneMinNotificationData['title'],
+                'title_kurdish' => $oneMinNotificationData['title_kurdish'],
+                'message' => $oneMinNotificationData['message'],
+                'message_kurdish' => $oneMinNotificationData['message_kurdish'],
+                'type' => $oneMinNotificationData['type'],
+                'priority' => $oneMinNotificationData['priority'],
+                'data' => $oneMinNotificationData['data'],
                 'scheduled_at' => $oneMinReminderTime,
-                'status' => 'pending',
+                'status' => $oneMinResult['success'] ? 'sent' : 'failed',
+                'api_response' => $oneMinResult,
+                'sent_at' => now(),
             ]);
         }
     }
