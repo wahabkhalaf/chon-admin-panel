@@ -78,14 +78,14 @@ class CompetitionObserver
 
     protected function scheduleCompetitionReminder(Competition $competition)
     {
-        $reminderTime = \Carbon\Carbon::parse($competition->start_time)->subMinutes(5);
-
-        if ($reminderTime->isFuture()) {
+        // Schedule 5-minute reminder notification
+        $fiveMinReminderTime = \Carbon\Carbon::parse($competition->start_time)->subMinutes(5);
+        if ($fiveMinReminderTime->isFuture()) {
             Notification::create([
                 'title' => 'Competition Starting Soon! ⏰',
                 'title_kurdish' => 'بەم دوایە پێشبڕکێ دەستپێدەکات! ⏰',
-                            'message' => "\"{$competition->name}\" starts in 5 minutes! Join now!",
-            'message_kurdish' => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە ٥ خولەکدا دەستپێدەکات! ئێستا بەشدار ببە!",
+                'message' => "\"{$competition->name}\" starts in 5 minutes! Join now!",
+                'message_kurdish' => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە ٥ خولەکدا دەستپێدەکات! ئێستا بەشدار ببە!",
                 'type' => 'competition',
                 'priority' => 'high',
                 'data' => [
@@ -97,7 +97,31 @@ class CompetitionObserver
                     'startTime' => $competition->start_time,
                     'gameType' => $competition->game_type,
                 ],
-                'scheduled_at' => $reminderTime,
+                'scheduled_at' => $fiveMinReminderTime,
+                'status' => 'pending',
+            ]);
+        }
+
+        // Schedule 1-minute reminder notification
+        $oneMinReminderTime = \Carbon\Carbon::parse($competition->start_time)->subMinute();
+        if ($oneMinReminderTime->isFuture()) {
+            Notification::create([
+                'title' => 'Competition Starting in 1 Minute! 🚨',
+                'title_kurdish' => 'پێشبڕکێ لە ١ خولەکدا دەستپێدەکات! 🚨',
+                'message' => "\"{$competition->name}\" starts in 1 minute! Get ready!",
+                'message_kurdish' => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە ١ خولەکدا دەستپێدەکات! ئامادە بە!",
+                'type' => 'competition',
+                'priority' => 'high',
+                'data' => [
+                    'competitionId' => $competition->id,
+                    'competitionName' => $competition->name,
+                    'competitionNameKurdish' => $competition->name_kurdish,
+                    'description' => $competition->description,
+                    'descriptionKurdish' => $competition->description_kurdish,
+                    'startTime' => $competition->start_time,
+                    'gameType' => $competition->game_type,
+                ],
+                'scheduled_at' => $oneMinReminderTime,
                 'status' => 'pending',
             ]);
         }
