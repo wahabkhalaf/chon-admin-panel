@@ -78,7 +78,7 @@ class CompetitionObserver
 
     protected function scheduleCompetitionReminder(Competition $competition)
     {
-        // Send 5-minute reminder notification immediately
+        // Schedule 5-minute reminder notification
         $fiveMinReminderTime = \Carbon\Carbon::parse($competition->start_time)->subMinutes(5);
         if ($fiveMinReminderTime->isFuture()) {
             $fiveMinNotificationData = [
@@ -99,10 +99,7 @@ class CompetitionObserver
                 ]
             ];
 
-            // Send via FCM immediately
-            $fiveMinResult = $this->fcmService->sendBroadcastNotification($fiveMinNotificationData);
-
-            // Create notification record
+            // Create notification record with pending status
             Notification::create([
                 'title' => $fiveMinNotificationData['title'],
                 'title_kurdish' => $fiveMinNotificationData['title_kurdish'],
@@ -112,13 +109,11 @@ class CompetitionObserver
                 'priority' => $fiveMinNotificationData['priority'],
                 'data' => $fiveMinNotificationData['data'],
                 'scheduled_at' => $fiveMinReminderTime,
-                'status' => $fiveMinResult['success'] ? 'sent' : 'failed',
-                'api_response' => $fiveMinResult,
-                'sent_at' => now(),
+                'status' => 'pending',
             ]);
         }
 
-        // Send 1-minute reminder notification immediately
+        // Schedule 1-minute reminder notification
         $oneMinReminderTime = \Carbon\Carbon::parse($competition->start_time)->subMinute();
         if ($oneMinReminderTime->isFuture()) {
             $oneMinNotificationData = [
@@ -139,10 +134,7 @@ class CompetitionObserver
                 ]
             ];
 
-            // Send via FCM immediately
-            $oneMinResult = $this->fcmService->sendBroadcastNotification($oneMinNotificationData);
-
-            // Create notification record
+            // Create notification record with pending status
             Notification::create([
                 'title' => $oneMinNotificationData['title'],
                 'title_kurdish' => $oneMinNotificationData['title_kurdish'],
@@ -152,9 +144,7 @@ class CompetitionObserver
                 'priority' => $oneMinNotificationData['priority'],
                 'data' => $oneMinNotificationData['data'],
                 'scheduled_at' => $oneMinReminderTime,
-                'status' => $oneMinResult['success'] ? 'sent' : 'failed',
-                'api_response' => $oneMinResult,
-                'sent_at' => now(),
+                'status' => 'pending',
             ]);
         }
     }

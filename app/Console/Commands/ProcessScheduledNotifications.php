@@ -24,9 +24,11 @@ class ProcessScheduledNotifications extends Command
     {
         $this->info('Processing scheduled notifications...');
 
-        // Get notifications that are scheduled to be sent now or in the past
+        // Get notifications that are scheduled to be sent now (within 1 minute window)
+        $now = now();
         $scheduledNotifications = Notification::where('status', 'pending')
-            ->where('scheduled_at', '<=', now())
+            ->where('scheduled_at', '<=', $now)
+            ->where('scheduled_at', '>=', $now->copy()->subMinute()) // Within 1 minute window
             ->whereNotNull('scheduled_at')
             ->get();
 
