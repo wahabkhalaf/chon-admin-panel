@@ -2,40 +2,83 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\SendScheduledNotification;
 use App\Models\Notification;
+use App\Services\FcmNotificationService;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 class ProcessScheduledNotifications extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'notifications:process-scheduled';
+    protected $description = 'Process and send scheduled notifications';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Process scheduled notifications that are ready to be sent';
+    protected FcmNotificationService $fcmService;
 
-    /**
-     * Execute the console command.
-     */
+    public function __construct(FcmNotificationService $fcmService)
+    {
+        parent::__construct();
+        $this->fcmService = $fcmService;
+    }
+
     public function handle()
     {
-        $pendingNotifications = Notification::readyToSend()->get();
+        $this->info('Processing scheduled notifications...');
 
-        $this->info("Found {$pendingNotifications->count()} notifications ready to send");
+        // Get notifications that are scheduled to be sent now or in the past
+        $scheduledNotifications = Notification::where('status', 'pending')
+            ->where('scheduled_at', '<=', now())
+            ->whereNotNull('scheduled_at')
+            ->get();
 
-        foreach ($pendingNotifications as $notification) {
-            SendScheduledNotification::dispatch($notification);
-            $this->line("Dispatched notification: {$notification->title}");
+        if ($scheduledNotifications->isEmpty()) {
+            $this->info('No scheduled notifications to process.');
+            return;
         }
 
-        $this->info('All scheduled notifications have been queued for processing');
+        $this->info("Found {$scheduledNotifications->count()} scheduled notifications to process.");
+
+        foreach ($scheduledNotifications as $notification) {
+            try {
+                $this->info("Processing notification ID: {$notification->id} - {$notification->title}");
+
+                // Prepare notification data for FCM
+                $notificationData = [
+                    'title' => $notification->title,
+                    'title_kurdish' => $notification->title_kurdish,
+                    'message' => $notification->message,
+                    'message_kurdish' => $notification->message_kurdish,
+                    'type' => $notification->type,
+                    'priority' => $notification->priority,
+                    'data' => $notification->data,
+                ];
+
+                // Send via FCM
+                $result = $this->fcmService->sendBroadcastNotification($notificationData);
+
+                // Update notification status
+                $notification->update([
+                    'status' => $result['success'] ? 'sent' : 'failed',
+                    'api_response' => $result,
+                    'sent_at' => now(),
+                ]);
+
+                if ($result['success']) {
+                    $this->info("✓ Notification sent successfully");
+                } else {
+                    $this->error("✗ Failed to send notification: " . json_encode($result));
+                }
+
+            } catch (\Exception $e) {
+                $this->error("Error processing notification ID {$notification->id}: " . $e->getMessage());
+                
+                // Mark as failed
+                $notification->update([
+                    'status' => 'failed',
+                    'api_response' => ['error' => $e->getMessage()],
+                ]);
+            }
+        }
+
+        $this->info('Finished processing scheduled notifications.');
     }
 }
