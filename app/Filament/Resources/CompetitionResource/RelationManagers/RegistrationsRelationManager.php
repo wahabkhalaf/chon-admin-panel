@@ -216,7 +216,7 @@ class RegistrationsRelationManager extends RelationManager
 
                 Tables\Actions\Action::make('cancel')
                     ->label('Cancel')
-                    ->icon('heroicon-o-ban')
+                    ->icon('heroicon-o-no-symbol')
                     ->color('warning')
                     ->action(fn(CompetitionRegistration $record) => $record->cancel())
                     ->visible(fn(CompetitionRegistration $record) => !$record->isCancelled() && !$record->isRegistered())

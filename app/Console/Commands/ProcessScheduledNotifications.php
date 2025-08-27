@@ -23,12 +23,10 @@ class ProcessScheduledNotifications extends Command
     public function handle()
     {
         $this->info('Processing scheduled notifications...');
-
-        // Get notifications that are scheduled to be sent now (within 1 minute window)
         $now = now();
         $scheduledNotifications = Notification::where('status', 'pending')
             ->where('scheduled_at', '<=', $now)
-            ->where('scheduled_at', '>=', $now->copy()->subMinute()) // Within 1 minute window
+            ->where('scheduled_at', '>=', $now->copy()->subMinute())
             ->whereNotNull('scheduled_at')
             ->get();
 
@@ -43,7 +41,6 @@ class ProcessScheduledNotifications extends Command
             try {
                 $this->info("Processing notification ID: {$notification->id} - {$notification->title}");
 
-                // Prepare notification data for FCM
                 $notificationData = [
                     'title' => $notification->title,
                     'title_kurdish' => $notification->title_kurdish,
@@ -54,10 +51,8 @@ class ProcessScheduledNotifications extends Command
                     'data' => $notification->data,
                 ];
 
-                // Send via FCM
                 $result = $this->fcmService->sendBroadcastNotification($notificationData);
 
-                // Update notification status
                 $notification->update([
                     'status' => $result['success'] ? 'sent' : 'failed',
                     'api_response' => $result,
@@ -73,7 +68,6 @@ class ProcessScheduledNotifications extends Command
             } catch (\Exception $e) {
                 $this->error("Error processing notification ID {$notification->id}: " . $e->getMessage());
                 
-                // Mark as failed
                 $notification->update([
                     'status' => 'failed',
                     'api_response' => ['error' => $e->getMessage()],

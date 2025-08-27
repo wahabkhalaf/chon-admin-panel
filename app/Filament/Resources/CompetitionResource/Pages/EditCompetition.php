@@ -56,13 +56,13 @@ class EditCompetition extends EditRecord
                                     ->label('Highest Score')
                                     ->state($stats['highest_score'])
                                     ->color('success')
-                                    ->icon('heroicon-o-arrow-trending-up'),
+                                    ->icon('heroicon-o-arrow-up'),
 
                                 TextEntry::make('lowest_score')
                                     ->label('Lowest Score')
                                     ->state($stats['lowest_score'])
                                     ->color('danger')
-                                    ->icon('heroicon-o-arrow-trending-down'),
+                                    ->icon('heroicon-o-arrow-down'),
                             ]),
                     ]),
 
@@ -218,9 +218,9 @@ class EditCompetition extends EditRecord
                 ->color($statusColor)
                 ->icon(match ($status) {
                     'upcoming' => 'heroicon-o-clock',
-                    'open' => 'heroicon-o-clipboard-document-list',
+                    'open' => 'heroicon-o-clipboard-document',
                     'active' => 'heroicon-o-play',
-                    'completed' => 'heroicon-o-check-badge',
+                    'completed' => 'heroicon-o-check-circle',
                     default => 'heroicon-o-information-circle'
                 })
                 ->size(ActionSize::Small)

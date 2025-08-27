@@ -64,9 +64,9 @@ class CompetitionResource extends Resource
 
                         $status = $record->getStatus();
                         return match ($status) {
-                            'open' => 'heroicon-o-clipboard-document-list',
+                            'open' => 'heroicon-o-clipboard-document',
                             'active' => 'heroicon-o-play',
-                            'completed' => 'heroicon-o-check-badge',
+                            'completed' => 'heroicon-o-check-circle',
                             default => 'heroicon-o-information-circle'
                         };
                     })
