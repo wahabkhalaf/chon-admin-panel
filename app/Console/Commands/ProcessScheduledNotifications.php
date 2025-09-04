@@ -22,63 +22,59 @@ class ProcessScheduledNotifications extends Command
 
     public function handle()
     {
-        // COMMENTED OUT - NOTIFICATIONS DISABLED
-        $this->info('Processing scheduled notifications... (DISABLED)');
-        return;
-        
-        // $this->info('Processing scheduled notifications...');
-        // $now = now();
-        // $scheduledNotifications = Notification::where('status', 'pending')
-        //     ->where('scheduled_at', '<=', $now)
-        //     ->where('scheduled_at', '>=', $now->copy()->subMinute())
-        //     ->whereNotNull('scheduled_at')
-        //     ->get();
+        $this->info('Processing scheduled notifications...');
+        $now = now();
+        $scheduledNotifications = Notification::where('status', 'pending')
+            ->where('scheduled_at', '<=', $now)
+            ->where('scheduled_at', '>=', $now->copy()->subMinute())
+            ->whereNotNull('scheduled_at')
+            ->get();
 
-        // if ($scheduledNotifications->isEmpty()) {
-        //     $this->info('No scheduled notifications to process.');
-        //     return;
-        // }
+        if ($scheduledNotifications->isEmpty()) {
+            $this->info('No scheduled notifications to process.');
+            return;
+        }
 
-        // $this->info("Found {$scheduledNotifications->count()} scheduled notifications to process.");
+        $this->info("Found {$scheduledNotifications->count()} scheduled notifications to process.");
 
-        // foreach ($scheduledNotifications as $notification) {
-        //     try {
-        //         $this->info("Processing notification ID: {$notification->id} - {$notification->title}");
+        foreach ($scheduledNotifications as $notification) {
+            try {
+                $this->info("Processing notification ID: {$notification->id} - {$notification->title}");
 
-        //         $notificationData = [
-        //             'title' => $notification->title,
-        //             'title_kurdish' => $notification->title_kurdish,
-        //             'message' => $notification->message,
-        //             'message_kurdish' => $notification->message_kurdish,
-        //             'type' => $notification->type,
-        //             'priority' => $notification->priority,
-        //             'data' => $notification->data,
-        //         ];
+                $notificationData = [
+                    'title' => $notification->title,
+                    'title_kurdish' => $notification->title_kurdish,
+                    'message' => $notification->message,
+                    'message_kurdish' => $notification->message_kurdish,
+                    'type' => $notification->type,
+                    'priority' => $notification->priority,
+                    'data' => $notification->data,
+                ];
 
-        //         $result = $this->fcmService->sendBroadcastNotification($notificationData);
+                $result = $this->fcmService->sendBroadcastNotification($notificationData);
 
-        //         $notification->update([
-        //             'status' => $result['success'] ? 'sent' : 'failed',
-        //             'api_response' => $result,
-        //             'sent_at' => now(),
-        //         ]);
+                $notification->update([
+                    'status' => $result['success'] ? 'sent' : 'failed',
+                    'api_response' => $result,
+                    'sent_at' => now(),
+                ]);
 
-        //         if ($result['success']) {
-        //             $this->info("✓ Notification sent successfully");
-        //         } else {
-        //             $this->error("✗ Failed to send notification: " . json_encode($result));
-        //         }
+                if ($result['success']) {
+                    $this->info("✓ Notification sent successfully");
+                } else {
+                    $this->error("✗ Failed to send notification: " . json_encode($result));
+                }
 
-        //     } catch (\Exception $e) {
-        //         $this->error("Error processing notification ID {$notification->id}: " . $e->getMessage());
-            
-        //         $notification->update([
-        //             'status' => 'failed',
-        //             'api_response' => ['error' => $e->getMessage()],
-        //         ]);
-        //     }
-        // }
+            } catch (\Exception $e) {
+                $this->error("Error processing notification ID {$notification->id}: " . $e->getMessage());
+                
+                $notification->update([
+                    'status' => 'failed',
+                    'api_response' => ['error' => $e->getMessage()],
+                ]);
+            }
+        }
 
-        // $this->info('Finished processing scheduled notifications.');
+        $this->info('Finished processing scheduled notifications.');
     }
 }
