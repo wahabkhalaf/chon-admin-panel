@@ -18,32 +18,34 @@ class CompetitionObserver
 
     public function created(Competition $competition)
     {
+        // COMMENTED OUT - NOTIFICATIONS DISABLED
         // Check if immediate notification already exists to prevent duplicates
-        $existingImmediateNotification = Notification::where('data->competitionId', $competition->id)
-            ->whereNull('scheduled_at')
-            ->where('status', 'sent')
-            ->count();
+        // $existingImmediateNotification = Notification::where('data->competitionId', $competition->id)
+        //     ->whereNull('scheduled_at')
+        //     ->where('status', 'sent')
+        //     ->count();
 
-        if ($existingImmediateNotification === 0) {
-            // Send immediate notification about new competition
-            $this->sendNewCompetitionNotification($competition);
-        }
+        // if ($existingImmediateNotification === 0) {
+        //     // Send immediate notification about new competition
+        //     $this->sendNewCompetitionNotification($competition);
+        // }
 
-        // Schedule reminder notifications
-        $this->scheduleCompetitionReminder($competition);
+        // // Schedule reminder notifications
+        // $this->scheduleCompetitionReminder($competition);
     }
 
     public function updated(Competition $competition)
     {
+        // COMMENTED OUT - NOTIFICATIONS DISABLED
         // Check if the competition status changed to 'open'
-        if ($competition->wasChanged('open_time') && $competition->isOpen()) {
-            $this->sendCompetitionOpenNotification($competition);
-        }
+        // if ($competition->wasChanged('open_time') && $competition->isOpen()) {
+        //     $this->sendCompetitionOpenNotification($competition);
+        // }
 
-        // Check if the competition status changed to 'active'
-        if ($competition->wasChanged('start_time') && $competition->isActive()) {
-            $this->sendCompetitionStartedNotification($competition);
-        }
+        // // Check if the competition status changed to 'active'
+        // if ($competition->wasChanged('start_time') && $competition->isActive()) {
+        //     $this->sendCompetitionStartedNotification($competition);
+        // }
     }
 
     protected function sendNewCompetitionNotification(Competition $competition)
