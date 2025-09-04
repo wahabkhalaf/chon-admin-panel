@@ -78,20 +78,20 @@ class CompetitionObserver
 
     protected function scheduleCompetitionReminder(Competition $competition)
     {
-        // Schedule 15-minute reminder notification
-        $fifteenMinReminderTime = \Carbon\Carbon::parse($competition->start_time)->subMinutes(15);
+        // Schedule 15-minute reminder notification (send 2 minutes early to compensate for delay)
+        $fifteenMinReminderTime = \Carbon\Carbon::parse($competition->start_time)->subMinutes(17);
         if ($fifteenMinReminderTime->isFuture()) {
             $this->createScheduledNotification($competition, $fifteenMinReminderTime, 15);
         }
 
-        // Schedule 5-minute reminder notification
-        $fiveMinReminderTime = \Carbon\Carbon::parse($competition->start_time)->subMinutes(5);
+        // Schedule 5-minute reminder notification (send 2 minutes early to compensate for delay)
+        $fiveMinReminderTime = \Carbon\Carbon::parse($competition->start_time)->subMinutes(7);
         if ($fiveMinReminderTime->isFuture()) {
             $this->createScheduledNotification($competition, $fiveMinReminderTime, 5);
         }
 
-        // Schedule 1-minute reminder notification
-        $oneMinReminderTime = \Carbon\Carbon::parse($competition->start_time)->subMinute();
+        // Schedule 1-minute reminder notification (send 2 minutes early to compensate for delay)
+        $oneMinReminderTime = \Carbon\Carbon::parse($competition->start_time)->subMinutes(3);
         if ($oneMinReminderTime->isFuture()) {
             $this->createScheduledNotification($competition, $oneMinReminderTime, 1);
         }
@@ -99,32 +99,35 @@ class CompetitionObserver
 
     protected function createScheduledNotification(Competition $competition, \Carbon\Carbon $scheduledTime, int $minutesBefore)
     {
+        // Calculate actual minutes remaining when notification will be sent
+        $actualMinutesRemaining = \Carbon\Carbon::parse($competition->start_time)->diffInMinutes($scheduledTime);
+        
         $title = match($minutesBefore) {
-            15 => 'Competition Starting in 15 Minutes! 🎯',
-            5 => 'Competition Starting Soon! ⏰',
-            1 => 'Competition Starting in 1 Minute! 🚨',
-            default => "Competition Starting in {$minutesBefore} Minutes! ⏰"
+            15 => "Competition Starting in {$actualMinutesRemaining} Minutes! 🎯",
+            5 => "Competition Starting in {$actualMinutesRemaining} Minutes! ⏰",
+            1 => "Competition Starting in {$actualMinutesRemaining} Minutes! 🚨",
+            default => "Competition Starting in {$actualMinutesRemaining} Minutes! ⏰"
         };
         
         $titleKurdish = match($minutesBefore) {
-            15 => 'پێشبڕکێ لە ١٥ خولەکدا دەستپێدەکات! 🎯',
-            5 => 'بەم دوایە پێشبڕکێ دەستپێدەکات! ⏰',
-            1 => 'پێشبڕکێ لە ١ خولەکدا دەستپێدەکات! 🚨',
-            default => "پێشبڕکێ لە {$minutesBefore} خولەکدا دەستپێدەکات! ⏰"
+            15 => "پێشبڕکێ لە {$actualMinutesRemaining} خولەکدا دەستپێدەکات! 🎯",
+            5 => "پێشبڕکێ لە {$actualMinutesRemaining} خولەکدا دەستپێدەکات! ⏰",
+            1 => "پێشبڕکێ لە {$actualMinutesRemaining} خولەکدا دەستپێدەکات! 🚨",
+            default => "پێشبڕکێ لە {$actualMinutesRemaining} خولەکدا دەستپێدەکات! ⏰"
         };
         
         $message = match($minutesBefore) {
-            15 => "\"{$competition->name}\" starts in 15 minutes! Don't miss out!",
-            5 => "\"{$competition->name}\" starts in 5 minutes! Join now!",
-            1 => "\"{$competition->name}\" starts in 1 minute! Get ready!",
-            default => "\"{$competition->name}\" starts in {$minutesBefore} minutes!"
+            15 => "\"{$competition->name}\" starts in {$actualMinutesRemaining} minutes! Don't miss out!",
+            5 => "\"{$competition->name}\" starts in {$actualMinutesRemaining} minutes! Join now!",
+            1 => "\"{$competition->name}\" starts in {$actualMinutesRemaining} minutes! Get ready!",
+            default => "\"{$competition->name}\" starts in {$actualMinutesRemaining} minutes!"
         };
         
         $messageKurdish = match($minutesBefore) {
-            15 => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە ١٥ خولەکدا دەستپێدەکات! لەدەست مەدە!",
-            5 => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە ٥ خولەکدا دەستپێدەکات! ئێستا بەشدار ببە!",
-            1 => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە ١ خولەکدا دەستپێدەکات! ئامادە بە!",
-            default => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە {$minutesBefore} خولەکدا دەستپێدەکات!"
+            15 => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە {$actualMinutesRemaining} خولەکدا دەستپێدەکات! لەدەست مەدە!",
+            5 => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە {$actualMinutesRemaining} خولەکدا دەستپێدەکات! ئێستا بەشدار ببە!",
+            1 => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە {$actualMinutesRemaining} خولەکدا دەستپێدەکات! ئامادە بە!",
+            default => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە {$actualMinutesRemaining} خولەکدا دەستپێدەکات!"
         };
 
         $notificationData = [

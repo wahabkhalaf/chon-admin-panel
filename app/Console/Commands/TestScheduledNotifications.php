@@ -34,16 +34,16 @@ class TestScheduledNotifications extends Command
         $this->info("Using competition: {$competition->name} (ID: {$competition->id})");
         $this->info("Start time: {$competition->start_time}");
 
-        // Create test notifications for 1, 5, and 15 minutes from now
+        // Create test notifications for 1, 5, and 15 minutes from now (with 2-minute early compensation)
         $now = now();
         $oneMinFromNow = $now->copy()->addMinute();
         $fiveMinFromNow = $now->copy()->addMinutes(5);
         $fifteenMinFromNow = $now->copy()->addMinutes(15);
 
-        $this->info("Creating test notifications:");
-        $this->info("- 1 minute reminder at: {$oneMinFromNow->format('Y-m-d H:i:s')}");
-        $this->info("- 5 minute reminder at: {$fiveMinFromNow->format('Y-m-d H:i:s')}");
-        $this->info("- 15 minute reminder at: {$fifteenMinFromNow->format('Y-m-d H:i:s')}");
+        $this->info("Creating test notifications (with 2-minute early compensation):");
+        $this->info("- 1 minute reminder at: {$oneMinFromNow->format('Y-m-d H:i:s')} (will arrive ~1 min before start)");
+        $this->info("- 5 minute reminder at: {$fiveMinFromNow->format('Y-m-d H:i:s')} (will arrive ~5 min before start)");
+        $this->info("- 15 minute reminder at: {$fifteenMinFromNow->format('Y-m-d H:i:s')} (will arrive ~15 min before start)");
 
         // Create 1-minute test notification
         $oneMinNotification = Notification::create([
