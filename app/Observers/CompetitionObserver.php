@@ -78,75 +78,85 @@ class CompetitionObserver
 
     protected function scheduleCompetitionReminder(Competition $competition)
     {
+        // Schedule 15-minute reminder notification
+        $fifteenMinReminderTime = \Carbon\Carbon::parse($competition->start_time)->subMinutes(15);
+        if ($fifteenMinReminderTime->isFuture()) {
+            $this->createScheduledNotification($competition, $fifteenMinReminderTime, 15);
+        }
+
         // Schedule 5-minute reminder notification
         $fiveMinReminderTime = \Carbon\Carbon::parse($competition->start_time)->subMinutes(5);
         if ($fiveMinReminderTime->isFuture()) {
-            $fiveMinNotificationData = [
-                'title' => 'Competition Starting Soon! ⏰',
-                'title_kurdish' => 'بەم دوایە پێشبڕکێ دەستپێدەکات! ⏰',
-                'message' => "\"{$competition->name}\" starts in 5 minutes! Join now!",
-                'message_kurdish' => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە ٥ خولەکدا دەستپێدەکات! ئێستا بەشدار ببە!",
-                'type' => 'competition',
-                'priority' => 'high',
-                'data' => [
-                    'competitionId' => $competition->id,
-                    'competitionName' => $competition->name,
-                    'competitionNameKurdish' => $competition->name_kurdish,
-                    'description' => $competition->description,
-                    'descriptionKurdish' => $competition->description_kurdish,
-                    'startTime' => $competition->start_time,
-                    'gameType' => $competition->game_type,
-                ]
-            ];
-
-            // Create notification record with pending status
-            Notification::create([
-                'title' => $fiveMinNotificationData['title'],
-                'title_kurdish' => $fiveMinNotificationData['title_kurdish'],
-                'message' => $fiveMinNotificationData['message'],
-                'message_kurdish' => $fiveMinNotificationData['message_kurdish'],
-                'type' => $fiveMinNotificationData['type'],
-                'priority' => $fiveMinNotificationData['priority'],
-                'data' => $fiveMinNotificationData['data'],
-                'scheduled_at' => $fiveMinReminderTime,
-                'status' => 'pending',
-            ]);
+            $this->createScheduledNotification($competition, $fiveMinReminderTime, 5);
         }
 
         // Schedule 1-minute reminder notification
         $oneMinReminderTime = \Carbon\Carbon::parse($competition->start_time)->subMinute();
         if ($oneMinReminderTime->isFuture()) {
-            $oneMinNotificationData = [
-                'title' => 'Competition Starting in 1 Minute! 🚨',
-                'title_kurdish' => 'پێشبڕکێ لە ١ خولەکدا دەستپێدەکات! 🚨',
-                'message' => "\"{$competition->name}\" starts in 1 minute! Get ready!",
-                'message_kurdish' => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە ١ خولەکدا دەستپێدەکات! ئامادە بە!",
-                'type' => 'competition',
-                'priority' => 'high',
-                'data' => [
-                    'competitionId' => $competition->id,
-                    'competitionName' => $competition->name,
-                    'competitionNameKurdish' => $competition->name_kurdish,
-                    'description' => $competition->description,
-                    'descriptionKurdish' => $competition->description_kurdish,
-                    'startTime' => $competition->start_time,
-                    'gameType' => $competition->game_type,
-                ]
-            ];
-
-            // Create notification record with pending status
-            Notification::create([
-                'title' => $oneMinNotificationData['title'],
-                'title_kurdish' => $oneMinNotificationData['title_kurdish'],
-                'message' => $oneMinNotificationData['message'],
-                'message_kurdish' => $oneMinNotificationData['message_kurdish'],
-                'type' => $oneMinNotificationData['type'],
-                'priority' => $oneMinNotificationData['priority'],
-                'data' => $oneMinNotificationData['data'],
-                'scheduled_at' => $oneMinReminderTime,
-                'status' => 'pending',
-            ]);
+            $this->createScheduledNotification($competition, $oneMinReminderTime, 1);
         }
+    }
+
+    protected function createScheduledNotification(Competition $competition, \Carbon\Carbon $scheduledTime, int $minutesBefore)
+    {
+        $title = match($minutesBefore) {
+            15 => 'Competition Starting in 15 Minutes! 🎯',
+            5 => 'Competition Starting Soon! ⏰',
+            1 => 'Competition Starting in 1 Minute! 🚨',
+            default => "Competition Starting in {$minutesBefore} Minutes! ⏰"
+        };
+        
+        $titleKurdish = match($minutesBefore) {
+            15 => 'پێشبڕکێ لە ١٥ خولەکدا دەستپێدەکات! 🎯',
+            5 => 'بەم دوایە پێشبڕکێ دەستپێدەکات! ⏰',
+            1 => 'پێشبڕکێ لە ١ خولەکدا دەستپێدەکات! 🚨',
+            default => "پێشبڕکێ لە {$minutesBefore} خولەکدا دەستپێدەکات! ⏰"
+        };
+        
+        $message = match($minutesBefore) {
+            15 => "\"{$competition->name}\" starts in 15 minutes! Don't miss out!",
+            5 => "\"{$competition->name}\" starts in 5 minutes! Join now!",
+            1 => "\"{$competition->name}\" starts in 1 minute! Get ready!",
+            default => "\"{$competition->name}\" starts in {$minutesBefore} minutes!"
+        };
+        
+        $messageKurdish = match($minutesBefore) {
+            15 => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە ١٥ خولەکدا دەستپێدەکات! لەدەست مەدە!",
+            5 => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە ٥ خولەکدا دەستپێدەکات! ئێستا بەشدار ببە!",
+            1 => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە ١ خولەکدا دەستپێدەکات! ئامادە بە!",
+            default => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە {$minutesBefore} خولەکدا دەستپێدەکات!"
+        };
+
+        $notificationData = [
+            'title' => $title,
+            'title_kurdish' => $titleKurdish,
+            'message' => $message,
+            'message_kurdish' => $messageKurdish,
+            'type' => 'competition',
+            'priority' => 'high',
+            'data' => [
+                'competitionId' => $competition->id,
+                'competitionName' => $competition->name,
+                'competitionNameKurdish' => $competition->name_kurdish,
+                'description' => $competition->description,
+                'descriptionKurdish' => $competition->description_kurdish,
+                'startTime' => $competition->start_time,
+                'gameType' => $competition->game_type,
+            ]
+        ];
+
+        // Create notification record with pending status
+        Notification::create([
+            'title' => $notificationData['title'],
+            'title_kurdish' => $notificationData['title_kurdish'],
+            'message' => $notificationData['message'],
+            'message_kurdish' => $notificationData['message_kurdish'],
+            'type' => $notificationData['type'],
+            'priority' => $notificationData['priority'],
+            'data' => $notificationData['data'],
+            'scheduled_at' => $scheduledTime,
+            'status' => 'pending',
+        ]);
     }
 
     protected function sendCompetitionOpenNotification(Competition $competition)
