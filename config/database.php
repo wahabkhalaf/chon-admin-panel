@@ -95,6 +95,12 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => 'prefer',
+            'options' => extension_loaded('pdo_pgsql') ? array_filter([
+                PDO::ATTR_PERSISTENT => env('DB_PERSISTENT', true),
+                PDO::ATTR_TIMEOUT => env('DB_TIMEOUT', 30),
+                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::ATTR_STRINGIFY_FETCHES => false,
+            ]) : [],
         ],
 
         'sqlsrv' => [
@@ -147,7 +153,9 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_database_'),
+            'prefix' => env('REDIS_PREFIX', 'chon_'),
+            // 'serializer' => extension_loaded('redis') ? Redis::SERIALIZER_MSGPACK : 'php',
+            // 'compression' => extension_loaded('redis') ? Redis::COMPRESSION_LZ4 : null,
         ],
 
         'default' => [
@@ -157,6 +165,19 @@ return [
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_DB', '0'),
+            'persistent' => env('REDIS_PERSISTENT', true),
+            'read_timeout' => env('REDIS_READ_TIMEOUT', 60),
+            'context' => [
+                'tcp' => [
+                    'tcp_nodelay' => true,
+                ],
+            ],
+            'pool' => [
+                'min_connections' => env('REDIS_POOL_MIN', 5),
+                'max_connections' => env('REDIS_POOL_MAX', 50),
+                'retry_interval' => env('REDIS_RETRY_INTERVAL', 100),
+                'timeout' => env('REDIS_POOL_TIMEOUT', 5.0),
+            ],
         ],
 
         'cache' => [
@@ -166,6 +187,41 @@ return [
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_CACHE_DB', '1'),
+            'persistent' => env('REDIS_PERSISTENT', true),
+            'read_timeout' => env('REDIS_READ_TIMEOUT', 60),
+            'context' => [
+                'tcp' => [
+                    'tcp_nodelay' => true,
+                ],
+            ],
+            'pool' => [
+                'min_connections' => env('REDIS_CACHE_POOL_MIN', 5),
+                'max_connections' => env('REDIS_CACHE_POOL_MAX', 30),
+                'retry_interval' => env('REDIS_RETRY_INTERVAL', 100),
+                'timeout' => env('REDIS_POOL_TIMEOUT', 5.0),
+            ],
+        ],
+
+        'session' => [
+            'url' => env('REDIS_URL'),
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'username' => env('REDIS_USERNAME'),
+            'password' => env('REDIS_PASSWORD'),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_SESSION_DB', '2'),
+            'persistent' => env('REDIS_PERSISTENT', true),
+            'read_timeout' => env('REDIS_READ_TIMEOUT', 60),
+        ],
+
+        'queue' => [
+            'url' => env('REDIS_URL'),
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'username' => env('REDIS_USERNAME'),
+            'password' => env('REDIS_PASSWORD'),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_QUEUE_DB', '3'),
+            'persistent' => env('REDIS_PERSISTENT', true),
+            'read_timeout' => env('REDIS_READ_TIMEOUT', 60),
         ],
 
     ],
