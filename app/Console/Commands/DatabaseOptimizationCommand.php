@@ -133,7 +133,7 @@ class DatabaseOptimizationCommand extends Command
             // Critical tables for maintenance (updated to skip non-existent tables)
             $criticalTables = [
                 'competitions',
-                'competition_leaderboards', 
+                'competition_leaderboards',
                 'competition_player_answers',
                 'competition_registrations',
                 'players',
