@@ -130,15 +130,14 @@ class DatabaseOptimizationCommand extends Command
         $startTime = microtime(true);
 
         try {
-            // Critical tables for maintenance
+            // Critical tables for maintenance (updated to skip non-existent tables)
             $criticalTables = [
                 'competitions',
-                'competition_leaderboards',
+                'competition_leaderboards', 
                 'competition_player_answers',
                 'competition_registrations',
                 'players',
                 'transactions',
-                'player_notifications',
                 'notifications',
                 'questions',
                 'competitions_questions'
@@ -149,9 +148,14 @@ class DatabaseOptimizationCommand extends Command
             // Run VACUUM ANALYZE on each table individually
             foreach ($criticalTables as $table) {
                 try {
-                    $this->line("  Vacuuming and analyzing {$table}...");
-                    DB::statement("VACUUM ANALYZE {$table}");
-                    $this->line("  ✅ {$table} completed");
+                    // Check if table exists first
+                    if (Schema::hasTable($table)) {
+                        $this->line("  Vacuuming and analyzing {$table}...");
+                        DB::statement("VACUUM ANALYZE {$table}");
+                        $this->line("  ✅ {$table} completed");
+                    } else {
+                        $this->line("  ⏭️  {$table} skipped (table not found)");
+                    }
                 } catch (\Exception $e) {
                     $this->warn("  ⚠️  {$table} failed: " . $e->getMessage());
                 }
