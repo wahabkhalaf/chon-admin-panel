@@ -432,34 +432,46 @@ class NotificationResource extends Resource
         $currentValue = self::isAutoNotificationsEnabled();
         $newValue = !$currentValue;
         
-        // Update the .env file
-        $envPath = base_path('.env');
-        
-        if (File::exists($envPath)) {
-            $envContent = File::get($envPath);
+        try {
+            // Update the .env file
+            $envPath = base_path('.env');
             
-            // Check if AUTO_NOTIFICATIONS already exists in .env
-            if (preg_match('/^AUTO_NOTIFICATIONS=.*$/m', $envContent)) {
-                // Update existing line
-                $envContent = preg_replace('/^AUTO_NOTIFICATIONS=.*$/m', "AUTO_NOTIFICATIONS=" . ($newValue ? 'true' : 'false'), $envContent);
+            if (File::exists($envPath)) {
+                $envContent = File::get($envPath);
+                
+                // Check if AUTO_NOTIFICATIONS already exists in .env
+                if (preg_match('/^AUTO_NOTIFICATIONS=.*$/m', $envContent)) {
+                    // Update existing line
+                    $envContent = preg_replace('/^AUTO_NOTIFICATIONS=.*$/m', "AUTO_NOTIFICATIONS=" . ($newValue ? 'true' : 'false'), $envContent);
+                } else {
+                    // Add new line
+                    $envContent .= "\nAUTO_NOTIFICATIONS=" . ($newValue ? 'true' : 'false') . "\n";
+                }
+                
+                File::put($envPath, $envContent);
+                
+                // Clear config cache to reload the new value
+                \Artisan::call('config:clear');
+                
+                // Show success notification
+                FilamentNotification::make()
+                    ->title($newValue ? 'Auto Notifications Enabled' : 'Auto Notifications Disabled')
+                    ->body($newValue 
+                        ? 'Automatic notifications for competitions are now enabled.'
+                        : 'Automatic notifications for competitions are now disabled. You can still send manual notifications.')
+                    ->success()
+                    ->send();
             } else {
-                // Add new line
-                $envContent .= "\nAUTO_NOTIFICATIONS=" . ($newValue ? 'true' : 'false') . "\n";
+                throw new \Exception('.env file not found');
             }
-            
-            File::put($envPath, $envContent);
+        } catch (\Exception $e) {
+            // Show error notification with instructions
+            FilamentNotification::make()
+                ->title('Permission Error')
+                ->body('Unable to update .env file due to permission restrictions. Please manually add or update this line in your .env file: AUTO_NOTIFICATIONS=' . ($newValue ? 'true' : 'false') . ' and run "php artisan config:clear"')
+                ->danger()
+                ->persistent()
+                ->send();
         }
-        
-        // Clear config cache to reload the new value
-        \Artisan::call('config:clear');
-        
-        // Show success notification
-        FilamentNotification::make()
-            ->title($newValue ? 'Auto Notifications Enabled' : 'Auto Notifications Disabled')
-            ->body($newValue 
-                ? 'Automatic notifications for competitions are now enabled.'
-                : 'Automatic notifications for competitions are now disabled. You can still send manual notifications.')
-            ->success()
-            ->send();
     }
 }
