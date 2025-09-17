@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\File;
 
 class NotificationResource extends Resource
 {
@@ -170,6 +171,21 @@ class NotificationResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->headerActions([
+                Tables\Actions\Action::make('toggle_auto_notifications')
+                    ->label(fn() => self::isAutoNotificationsEnabled() ? 'Disable Auto Notifications' : 'Enable Auto Notifications')
+                    ->icon(fn() => self::isAutoNotificationsEnabled() ? 'heroicon-o-bell-slash' : 'heroicon-o-bell')
+                    ->color(fn() => self::isAutoNotificationsEnabled() ? 'danger' : 'success')
+                    ->action(function () {
+                        self::toggleAutoNotifications();
+                    })
+                    ->requiresConfirmation()
+                    ->modalHeading(fn() => self::isAutoNotificationsEnabled() ? 'Disable Auto Notifications' : 'Enable Auto Notifications')
+                    ->modalDescription(fn() => self::isAutoNotificationsEnabled() 
+                        ? 'This will disable automatic notifications for new competitions and scheduled reminders. You can still send manual notifications.'
+                        : 'This will enable automatic notifications for new competitions and scheduled reminders.')
+                    ->modalSubmitActionLabel(fn() => self::isAutoNotificationsEnabled() ? 'Disable' : 'Enable')
+            ])
             ->columns([
                 Tables\Columns\TextColumn::make('title')
                     ->label('Title')
@@ -398,5 +414,52 @@ class NotificationResource extends Resource
                 ->danger()
                 ->send();
         }
+    }
+
+    /**
+     * Check if auto notifications are enabled
+     */
+    public static function isAutoNotificationsEnabled(): bool
+    {
+        return config('app.auto_notifications', true);
+    }
+
+    /**
+     * Toggle auto notifications setting
+     */
+    public static function toggleAutoNotifications(): void
+    {
+        $currentValue = self::isAutoNotificationsEnabled();
+        $newValue = !$currentValue;
+        
+        // Update the .env file
+        $envPath = base_path('.env');
+        
+        if (File::exists($envPath)) {
+            $envContent = File::get($envPath);
+            
+            // Check if AUTO_NOTIFICATIONS already exists in .env
+            if (preg_match('/^AUTO_NOTIFICATIONS=.*$/m', $envContent)) {
+                // Update existing line
+                $envContent = preg_replace('/^AUTO_NOTIFICATIONS=.*$/m', "AUTO_NOTIFICATIONS=" . ($newValue ? 'true' : 'false'), $envContent);
+            } else {
+                // Add new line
+                $envContent .= "\nAUTO_NOTIFICATIONS=" . ($newValue ? 'true' : 'false') . "\n";
+            }
+            
+            File::put($envPath, $envContent);
+        }
+        
+        // Clear config cache to reload the new value
+        \Artisan::call('config:clear');
+        
+        // Show success notification
+        FilamentNotification::make()
+            ->title($newValue ? 'Auto Notifications Enabled' : 'Auto Notifications Disabled')
+            ->body($newValue 
+                ? 'Automatic notifications for competitions are now enabled.'
+                : 'Automatic notifications for competitions are now disabled. You can still send manual notifications.')
+            ->success()
+            ->send();
     }
 }

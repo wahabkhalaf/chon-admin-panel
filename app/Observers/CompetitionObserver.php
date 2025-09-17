@@ -18,6 +18,11 @@ class CompetitionObserver
 
     public function created(Competition $competition)
     {
+        // Check if auto notifications are enabled
+        if (!config('app.auto_notifications', true)) {
+            return;
+        }
+
         // Check if immediate notification already exists to prevent duplicates
         $existingImmediateNotification = Notification::where('data->competitionId', $competition->id)
             ->whereNull('scheduled_at')
@@ -35,6 +40,11 @@ class CompetitionObserver
 
     public function updated(Competition $competition)
     {
+        // Check if auto notifications are enabled
+        if (!config('app.auto_notifications', true)) {
+            return;
+        }
+
         // Check if the competition status changed to 'open'
         if ($competition->wasChanged('open_time') && $competition->isOpen()) {
             $this->sendCompetitionOpenNotification($competition);

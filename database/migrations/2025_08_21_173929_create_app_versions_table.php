@@ -10,17 +10,15 @@ return new class extends Migration
     {
         Schema::create('app_versions', function (Blueprint $table) {
             $table->id();
-            $table->string('platform'); // 'ios' or 'android'
-            $table->string('version'); // e.g., '1.1.0'
-            $table->integer('build_number'); // e.g., 10
-            $table->string('app_store_url')->nullable(); // App Store/Play Store URL
-            $table->text('release_notes')->nullable(); // What's new in this version
-            $table->boolean('is_force_update')->default(false); // Force users to update
-            $table->boolean('is_active')->default(true); // Enable/disable this version
-            $table->timestamp('released_at')->nullable(); // When this version was released
+            $table->string('platform'); 
+            $table->string('version');  
+            $table->integer('build_number'); 
+            $table->string('app_store_url')->nullable(); 
+            $table->text('release_notes')->nullable(); 
+            $table->boolean('is_force_update')->default(false); 
+            $table->boolean('is_active')->default(true); 
+            $table->timestamp('released_at')->nullable(); 
             $table->timestamps();
-            
-            // Ensure unique platform + version combinations
             $table->unique(['platform', 'version']);
         });
     }

@@ -22,6 +22,12 @@ class ProcessScheduledNotifications extends Command
 
     public function handle()
     {
+        // Check if auto notifications are enabled
+        if (!config('app.auto_notifications', true)) {
+            $this->info('Auto notifications are disabled. Skipping scheduled notification processing.');
+            return;
+        }
+
         $this->info('Processing scheduled notifications...');
         $now = now();
         $scheduledNotifications = Notification::where('status', 'pending')
@@ -77,4 +83,5 @@ class ProcessScheduledNotifications extends Command
 
         $this->info('Finished processing scheduled notifications.');
     }
+    
 }

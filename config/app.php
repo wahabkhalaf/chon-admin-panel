@@ -86,6 +86,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Notification Settings
+    |--------------------------------------------------------------------------
+    |
+    | These settings control the automatic notification system for competitions.
+    | When auto_notifications is enabled, the system will automatically send
+    | notifications when competitions are created and scheduled reminders.
+    |
+    */
+
+    'auto_notifications' => env('AUTO_NOTIFICATIONS', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | Encryption Key
     |--------------------------------------------------------------------------
     |
