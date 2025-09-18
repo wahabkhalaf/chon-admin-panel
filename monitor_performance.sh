@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# Performance Monitoring Script for Competition Platform
+# Performance Monitoring Script for Competition Platform - PRODUCTION SERVER
 # Run this during high-load periods (9 PM onwards)
 
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-LOG_FILE="./performance_monitor_$(date '+%Y%m%d').log"
+LOG_FILE="/var/log/performance_monitor_$(date '+%Y%m%d').log"
 
 echo "=== Performance Monitor - $TIMESTAMP ===" >> $LOG_FILE
 
 # 1. Check current slow queries
 echo "--- Slow Queries Check ---" >> $LOG_FILE
-./vendor/bin/sail psql -c "
+sudo -u postgres psql -d chondb -c "
 SELECT 
     LEFT(query, 100) as query_snippet,
     calls,
@@ -23,7 +23,7 @@ LIMIT 5;
 
 # 2. Check batch function usage
 echo "--- Batch Function Usage ---" >> $LOG_FILE
-./vendor/bin/sail psql -c "
+sudo -u postgres psql -d chondb -c "
 SELECT 
     'Batch Function Calls' as metric,
     COUNT(*) as total_calls,
@@ -35,7 +35,7 @@ AND calls > 0;
 
 # 3. Check recent activity (last 5 minutes)
 echo "--- Recent Activity (Last 5 min) ---" >> $LOG_FILE
-./vendor/bin/sail psql -c "
+sudo -u postgres psql -d chondb -c "
 SELECT 
     'Recent Activity' as period,
     COUNT(*) as total_inserts,
@@ -47,7 +47,7 @@ WHERE created_at >= NOW() - INTERVAL '5 minutes';
 
 # 4. Check active connections
 echo "--- Active Connections ---" >> $LOG_FILE
-./vendor/bin/sail psql -c "
+sudo -u postgres psql -d chondb -c "
 SELECT 
     count(*) as total_connections,
     count(*) FILTER (WHERE state = 'active') as active_connections,
@@ -58,7 +58,7 @@ WHERE datname = current_database();
 
 # 5. Check for blocking locks
 echo "--- Blocking Locks ---" >> $LOG_FILE
-./vendor/bin/sail psql -c "
+sudo -u postgres psql -d chondb -c "
 SELECT 
     l.locktype,
     l.relation::regclass as table_name,
@@ -71,6 +71,11 @@ JOIN pg_stat_activity a ON l.pid = a.pid
 WHERE l.relation::regclass::text = 'competition_leaderboards'
 AND NOT l.granted;
 " >> $LOG_FILE 2>&1
+
+# 6. Check system load
+echo "--- System Load ---" >> $LOG_FILE
+uptime >> $LOG_FILE
+free -h >> $LOG_FILE
 
 echo "=== End of Monitor - $TIMESTAMP ===" >> $LOG_FILE
 echo "" >> $LOG_FILE

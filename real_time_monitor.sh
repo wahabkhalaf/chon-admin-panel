@@ -1,17 +1,18 @@
 #!/bin/bash
 
-# Real-Time Performance Monitor for Local Development
+# Real-Time Performance Monitor for PRODUCTION SERVER
 # Run this during the game to see live performance
 
 while true; do
     clear
-    echo "=== REAL-TIME PERFORMANCE MONITOR ==="
+    echo "=== REAL-TIME PERFORMANCE MONITOR - PRODUCTION ==="
     echo "Time: $(date '+%Y-%m-%d %H:%M:%S')"
-    echo "======================================"
+    echo "Server: $(hostname)"
+    echo "=================================================="
     
     # Check recent INSERTs (last 2 minutes)
     echo "--- Recent INSERTs (Last 2 min) ---"
-    ./vendor/bin/sail psql -c "
+    sudo -u postgres psql -d chondb -c "
     SELECT 
         COUNT(*) as total_inserts,
         ROUND(AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) * 1000), 2) as avg_time_ms,
@@ -22,7 +23,7 @@ while true; do
     
     # Check batch function usage
     echo "--- Batch Function Usage ---"
-    ./vendor/bin/sail psql -c "
+    sudo -u postgres psql -d chondb -c "
     SELECT 
         COUNT(*) as total_calls,
         ROUND(AVG(mean_exec_time::numeric), 2) as avg_time_ms
@@ -33,7 +34,7 @@ while true; do
     
     # Check active connections
     echo "--- Active Connections ---"
-    ./vendor/bin/sail psql -c "
+    sudo -u postgres psql -d chondb -c "
     SELECT 
         count(*) as total_connections,
         count(*) FILTER (WHERE state = 'active') as active_connections
@@ -41,7 +42,11 @@ while true; do
     WHERE datname = current_database();
     "
     
-    echo "======================================"
+    # Check system load
+    echo "--- System Load ---"
+    uptime
+    
+    echo "=================================================="
     echo "Press Ctrl+C to stop monitoring"
     sleep 10
 done

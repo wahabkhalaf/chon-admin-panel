@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# Simple Performance Check
+# Quick Performance Check for PRODUCTION SERVER
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-LOG_FILE="./performance_check_$(date '+%Y%m%d_%H%M').log"
+LOG_FILE="/var/log/performance_check_$(date '+%Y%m%d_%H%M').log"
 
 echo "=== Performance Check - $TIMESTAMP ===" > $LOG_FILE
 
 # Check recent INSERTs
 echo "--- Recent INSERTs (Last 5 min) ---" >> $LOG_FILE
-./vendor/bin/sail psql -c "
+sudo -u postgres psql -d chondb -c "
 SELECT 
     COUNT(*) as total_inserts,
     ROUND(AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) * 1000), 2) as avg_time_ms,
@@ -19,7 +19,7 @@ WHERE created_at >= NOW() - INTERVAL '5 minutes';
 
 # Check batch function usage
 echo "--- Batch Function Usage ---" >> $LOG_FILE
-./vendor/bin/sail psql -c "
+sudo -u postgres psql -d chondb -c "
 SELECT 
     COUNT(*) as total_calls,
     ROUND(AVG(mean_exec_time::numeric), 2) as avg_time_ms
@@ -30,7 +30,7 @@ AND calls > 0;
 
 # Check slow queries
 echo "--- Slow Queries ---" >> $LOG_FILE
-./vendor/bin/sail psql -c "
+sudo -u postgres psql -d chondb -c "
 SELECT 
     LEFT(query, 80) as query_snippet,
     calls,
@@ -40,6 +40,11 @@ WHERE query LIKE '%INSERT INTO competition_leaderboards%'
 ORDER BY mean_exec_time DESC 
 LIMIT 3;
 " >> $LOG_FILE 2>&1
+
+# Check system status
+echo "--- System Status ---" >> $LOG_FILE
+uptime >> $LOG_FILE
+free -h >> $LOG_FILE
 
 echo "=== End of Check - $TIMESTAMP ===" >> $LOG_FILE
 
