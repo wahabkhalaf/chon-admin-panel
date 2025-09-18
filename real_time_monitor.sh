@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Real-Time Performance Monitor
+# Real-Time Performance Monitor for Local Development
 # Run this during the game to see live performance
 
 while true; do
@@ -11,7 +11,7 @@ while true; do
     
     # Check recent INSERTs (last 2 minutes)
     echo "--- Recent INSERTs (Last 2 min) ---"
-    sudo -u postgres psql -d chondb -c "
+    ./vendor/bin/sail psql -c "
     SELECT 
         COUNT(*) as total_inserts,
         ROUND(AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) * 1000), 2) as avg_time_ms,
@@ -22,7 +22,7 @@ while true; do
     
     # Check batch function usage
     echo "--- Batch Function Usage ---"
-    sudo -u postgres psql -d chondb -c "
+    ./vendor/bin/sail psql -c "
     SELECT 
         COUNT(*) as total_calls,
         ROUND(AVG(mean_exec_time::numeric), 2) as avg_time_ms
@@ -33,7 +33,7 @@ while true; do
     
     # Check active connections
     echo "--- Active Connections ---"
-    sudo -u postgres psql -d chondb -c "
+    ./vendor/bin/sail psql -c "
     SELECT 
         count(*) as total_connections,
         count(*) FILTER (WHERE state = 'active') as active_connections
