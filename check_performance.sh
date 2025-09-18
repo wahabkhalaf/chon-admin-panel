@@ -2,7 +2,10 @@
 
 # Quick Performance Check for PRODUCTION SERVER
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-LOG_FILE="./performance_check_$(date '+%Y%m%d_%H%M').log"
+LOG_FILE="/tmp/performance_logs/performance_check_$(date '+%Y%m%d_%H%M').log"
+
+# Ensure log directory exists
+mkdir -p /tmp/performance_logs
 
 echo "=== Performance Check - $TIMESTAMP ===" > $LOG_FILE
 

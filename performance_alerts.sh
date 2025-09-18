@@ -3,8 +3,11 @@
 # Performance Alert System for PRODUCTION SERVER
 # Run this to check for performance issues
 
-ALERT_FILE="./performance_alerts_$(date '+%Y%m%d').log"
+ALERT_FILE="/tmp/performance_logs/performance_alerts_$(date '+%Y%m%d').log"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+
+# Ensure log directory exists
+mkdir -p /tmp/performance_logs
 
 echo "=== Performance Alert Check - $TIMESTAMP ===" >> $ALERT_FILE
 
