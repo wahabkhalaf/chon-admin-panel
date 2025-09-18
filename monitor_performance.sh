@@ -4,7 +4,7 @@
 # Run this during high-load periods (9 PM onwards)
 
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-LOG_FILE="/var/log/performance_monitor_$(date '+%Y%m%d').log"
+LOG_FILE="./performance_monitor_$(date '+%Y%m%d').log"
 
 echo "=== Performance Monitor - $TIMESTAMP ===" >> $LOG_FILE
 

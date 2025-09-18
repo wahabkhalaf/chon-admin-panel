@@ -3,7 +3,7 @@
 # Performance Alert System for PRODUCTION SERVER
 # Run this to check for performance issues
 
-ALERT_FILE="/var/log/performance_alerts_$(date '+%Y%m%d').log"
+ALERT_FILE="./performance_alerts_$(date '+%Y%m%d').log"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
 echo "=== Performance Alert Check - $TIMESTAMP ===" >> $ALERT_FILE
@@ -17,10 +17,10 @@ AND EXTRACT(EPOCH FROM (updated_at - created_at)) * 1000 > 1000;
 " 2>/dev/null | tr -d ' ')
 
 if [ "$SLOW_INSERTS" -gt 0 ] 2>/dev/null; then
-    echo "�� ALERT: $SLOW_INSERTS slow INSERTs detected in last 5 minutes!" >> $ALERT_FILE
+    echo " ALERT: $SLOW_INSERTS slow INSERTs detected in last 5 minutes!" >> $ALERT_FILE
     echo "Time: $TIMESTAMP" >> $ALERT_FILE
     echo "Check performance immediately!" >> $ALERT_FILE
-    echo "�� ALERT: $SLOW_INSERTS slow INSERTs detected in last 5 minutes!"
+    echo " ALERT: $SLOW_INSERTS slow INSERTs detected in last 5 minutes!"
 fi
 
 # Check for high connection count
@@ -40,7 +40,7 @@ WHERE query LIKE '%batch_update_leaderboard_nodejs%' AND calls > 0;
 " 2>/dev/null | tr -d ' ')
 
 if [ "$BATCH_CALLS" -eq 0 ] 2>/dev/null; then
-    echo "�� ALERT: No batch function calls detected!" >> $ALERT_FILE
+    echo " ALERT: No batch function calls detected!" >> $ALERT_FILE
     echo "Node.js may not be using the optimized batch function!" >> $ALERT_FILE
     echo "🚨 ALERT: No batch function calls detected!"
 fi

@@ -2,7 +2,7 @@
 
 # Quick Performance Check for PRODUCTION SERVER
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-LOG_FILE="/var/log/performance_check_$(date '+%Y%m%d_%H%M').log"
+LOG_FILE="./performance_check_$(date '+%Y%m%d_%H%M').log"
 
 echo "=== Performance Check - $TIMESTAMP ===" > $LOG_FILE
 
