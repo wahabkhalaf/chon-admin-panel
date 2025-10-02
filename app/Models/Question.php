@@ -18,12 +18,18 @@ class Question extends Model
      */
     protected $fillable = [
         'question_text',
+        'question_text_arabic',
         'question_text_kurdish',
+        'question_text_kurmanji',
         'question_type',
         'options',
+        'options_arabic',
         'options_kurdish',
+        'options_kurmanji',
         'correct_answer',
+        'correct_answer_arabic',
         'correct_answer_kurdish',
+        'correct_answer_kurmanji',
         'level',
         'seconds', // Added seconds for time allowed per question
     ];
@@ -35,7 +41,9 @@ class Question extends Model
      */
     protected $casts = [
         'options' => 'array',
+        'options_arabic' => 'array',
         'options_kurdish' => 'array',
+        'options_kurmanji' => 'array',
     ];
 
     /**

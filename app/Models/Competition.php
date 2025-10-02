@@ -28,9 +28,13 @@ class Competition extends Model
 
     protected $fillable = [
         'name',
+        'name_arabic',
         'name_kurdish',
+        'name_kurmanji',
         'description',
+        'description_arabic',
         'description_kurdish',
+        'description_kurmanji',
         'entry_fee',
         'open_time',
         'start_time',

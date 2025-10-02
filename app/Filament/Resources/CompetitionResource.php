@@ -107,6 +107,36 @@ class CompetitionResource extends Resource
                             ->disabled(fn($record) => $record && !$record->canEditField('game_type')),
                     ]),
 
+                Forms\Components\Section::make('Arabic Translation')
+                    ->schema([
+                        Forms\Components\TextInput::make('name_arabic')
+                            ->maxLength(100)
+                            ->label('Name (Arabic)')
+                            ->disabled(fn($record) => $record && !$record->canEditField('name')),
+                        Forms\Components\Textarea::make('description_arabic')
+                            ->maxLength(65535)
+                            ->columnSpanFull()
+                            ->label('Description (Arabic)')
+                            ->disabled(fn($record) => $record && !$record->canEditField('description')),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
+
+                Forms\Components\Section::make('Kurmanji Translation')
+                    ->schema([
+                        Forms\Components\TextInput::make('name_kurmanji')
+                            ->maxLength(100)
+                            ->label('Name (Kurmanji)')
+                            ->disabled(fn($record) => $record && !$record->canEditField('name')),
+                        Forms\Components\Textarea::make('description_kurmanji')
+                            ->maxLength(65535)
+                            ->columnSpanFull()
+                            ->label('Description (Kurmanji)')
+                            ->disabled(fn($record) => $record && !$record->canEditField('description')),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
+
                 Forms\Components\Section::make('Kurdish Translation')
                     ->schema([
                         Forms\Components\TextInput::make('name_kurdish')

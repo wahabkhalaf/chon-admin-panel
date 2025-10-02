@@ -28,6 +28,8 @@ class LanguageController extends Controller
                 'question_type' => $question->question_type,
                 'level' => $question->level,
                 'has_kurdish' => $question->hasKurdishTranslation(),
+                'has_arabic' => $question->hasArabicTranslation(),
+                'has_kurmanji' => $question->hasKurmanjiTranslation(),
                 'available_languages' => $question->getAvailableLanguages(),
             ];
         });
@@ -56,6 +58,8 @@ class LanguageController extends Controller
                 'game_type' => $competition->game_type,
                 'status' => $competition->getStatus(),
                 'has_kurdish' => $competition->hasKurdishTranslation(),
+                'has_arabic' => $competition->hasArabicTranslation(),
+                'has_kurmanji' => $competition->hasKurmanjiTranslation(),
                 'available_languages' => $competition->getAvailableLanguages(),
             ];
         });
@@ -100,8 +104,13 @@ class LanguageController extends Controller
      */
     public function getAvailableLanguages(): JsonResponse
     {
-        $questions = Question::whereNotNull('question_text_kurdish')->count();
-        $competitions = Competition::whereNotNull('name_kurdish')->count();
+        $questionsKu = Question::whereNotNull('question_text_kurdish')->count();
+        $questionsAr = Question::whereNotNull('question_text_arabic')->count();
+        $questionsKm = Question::whereNotNull('question_text_kurmanji')->count();
+
+        $competitionsKu = Competition::whereNotNull('name_kurdish')->count();
+        $competitionsAr = Competition::whereNotNull('name_arabic')->count();
+        $competitionsKm = Competition::whereNotNull('name_kurmanji')->count();
         $paymentMethods = PaymentMethod::whereNotNull('name_kurdish')->count();
 
         return response()->json([
@@ -109,10 +118,16 @@ class LanguageController extends Controller
             'available_languages' => [
                 'en' => 'English',
                 'ku' => 'Kurdish',
+                'ar' => 'Arabic',
+                'km' => 'Kurmanji',
             ],
             'translation_stats' => [
-                'questions_with_kurdish' => $questions,
-                'competitions_with_kurdish' => $competitions,
+                'questions_with_kurdish' => $questionsKu,
+                'questions_with_arabic' => $questionsAr,
+                'questions_with_kurmanji' => $questionsKm,
+                'competitions_with_kurdish' => $competitionsKu,
+                'competitions_with_arabic' => $competitionsAr,
+                'competitions_with_kurmanji' => $competitionsKm,
                 'payment_methods_with_kurdish' => $paymentMethods,
             ],
         ]);

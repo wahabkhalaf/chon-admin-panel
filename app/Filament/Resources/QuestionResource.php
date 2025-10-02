@@ -107,7 +107,6 @@ class QuestionResource extends Resource
                                     }),
                             ])
                             ->columns(2)
-                            ->minItems(2)
                             ->maxItems(5)
                             ->visible(fn(callable $get) => $get('question_type') === 'multi_choice')
                             ->label('Answer Options')
@@ -210,6 +209,236 @@ class QuestionResource extends Resource
                             ->required()
                             ->helperText('Time allowed for this question (in seconds).'),
                     ]),
+
+                Forms\Components\Section::make('Arabic Translation')
+                    ->schema([
+                        Forms\Components\Textarea::make('question_text_arabic')
+                            ->maxLength(1000)
+                            ->columnSpan(2)
+                            ->label('Question (Arabic)'),
+
+                        Forms\Components\Repeater::make('options_arabic')
+                            ->schema([
+                                Forms\Components\TextInput::make('option')
+                                    ->required(),
+                                Forms\Components\Toggle::make('is_correct')
+                                    ->required()
+                                    ->reactive()
+                                    ->afterStateUpdated(function ($state, callable $set, $livewire) {
+                                        if (!isset($livewire->data['options_arabic'])) {
+                                            return;
+                                        }
+
+                                        if ($state) {
+                                            foreach ($livewire->data['options_arabic'] as $index => $option) {
+                                                if (($option['is_correct'] ?? false) === true && $index !== array_key_last($livewire->data['options_arabic'])) {
+                                                    $set("options_arabic.{$index}.is_correct", false);
+                                                }
+                                            }
+                                        } else {
+                                            $hasCorrectOption = false;
+                                            foreach ($livewire->data['options_arabic'] as $option) {
+                                                if (($option['is_correct'] ?? false) === true) {
+                                                    $hasCorrectOption = true;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (!$hasCorrectOption) {
+                                                $lastIndex = array_key_last($livewire->data['options_arabic']);
+                                                if ($lastIndex !== null) {
+                                                    $set("options_arabic.{$lastIndex}.is_correct", true);
+                                                }
+                                                Notification::make()
+                                                    ->warning()
+                                                    ->title('At least one Arabic option must be marked as correct')
+                                                    ->send();
+                                            }
+                                        }
+
+                                        foreach ($livewire->data['options_arabic'] as $option) {
+                                            if (($option['is_correct'] ?? false) === true) {
+                                                $set('correct_answer_arabic', $option['option'] ?? '');
+                                                break;
+                                            }
+                                        }
+                                    }),
+                            ])
+                            ->columns(2)
+                            ->maxItems(5)
+                            ->visible(fn(callable $get) => $get('question_type') === 'multi_choice')
+                            ->label('Answer Options (Arabic)')
+                            ->rules(['array'])
+                            ->default([])
+                            ->live()
+                            ->afterStateUpdated(function (callable $set, $livewire) {
+                                if (isset($livewire->data['options_arabic']) && is_array($livewire->data['options_arabic'])) {
+                                    foreach ($livewire->data['options_arabic'] as $option) {
+                                        if (($option['is_correct'] ?? false) === true) {
+                                            $set('correct_answer_arabic', $option['option'] ?? '');
+                                            break;
+                                        }
+                                    }
+                                }
+                            })
+                            ->beforeStateDehydrated(function (callable $set, $livewire) {
+                                if (isset($livewire->data['options_arabic']) && is_array($livewire->data['options_arabic'])) {
+                                    foreach ($livewire->data['options_arabic'] as $option) {
+                                        if (($option['is_correct'] ?? false) === true) {
+                                            $set('correct_answer_arabic', $option['option'] ?? '');
+                                            break;
+                                        }
+                                    }
+                                }
+                            }),
+
+                        Forms\Components\TextInput::make('correct_answer_arabic')
+                            ->visible(fn(callable $get) => in_array($get('question_type'), ['puzzle', 'pattern_recognition', 'math']))
+                            ->label('Correct Answer (Arabic)'),
+
+                        Forms\Components\Select::make('true_false_answer_arabic')
+                            ->options([
+                                'true' => 'True',
+                                'false' => 'False',
+                            ])
+                            ->visible(fn(callable $get) => $get('question_type') === 'true_false')
+                            ->reactive()
+                            ->afterStateUpdated(fn($state, callable $set) => $set('correct_answer_arabic', $state))
+                            ->label('Correct Answer (Arabic)'),
+
+                        Forms\Components\Hidden::make('correct_answer_arabic')
+                            ->dehydrateStateUsing(function (callable $get) {
+                                $questionType = $get('question_type');
+                                if ($questionType === 'multi_choice') {
+                                    $optionsArabic = $get('options_arabic') ?? [];
+                                    foreach ($optionsArabic as $option) {
+                                        if (($option['is_correct'] ?? false) === true) {
+                                            return $option['option'] ?? '';
+                                        }
+                                    }
+                                    return '';
+                                }
+
+                                return $get('correct_answer_arabic');
+                            }),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
+
+                Forms\Components\Section::make('Kurmanji Translation')
+                    ->schema([
+                        Forms\Components\Textarea::make('question_text_kurmanji')
+                            ->maxLength(1000)
+                            ->columnSpan(2)
+                            ->label('Question (Kurmanji)'),
+
+                        Forms\Components\Repeater::make('options_kurmanji')
+                            ->schema([
+                                Forms\Components\TextInput::make('option')
+                                    ->required(),
+                                Forms\Components\Toggle::make('is_correct')
+                                    ->required()
+                                    ->reactive()
+                                    ->afterStateUpdated(function ($state, callable $set, $livewire) {
+                                        if (!isset($livewire->data['options_kurmanji'])) {
+                                            return;
+                                        }
+
+                                        if ($state) {
+                                            foreach ($livewire->data['options_kurmanji'] as $index => $option) {
+                                                if (($option['is_correct'] ?? false) === true && $index !== array_key_last($livewire->data['options_kurmanji'])) {
+                                                    $set("options_kurmanji.{$index}.is_correct", false);
+                                                }
+                                            }
+                                        } else {
+                                            $hasCorrectOption = false;
+                                            foreach ($livewire->data['options_kurmanji'] as $option) {
+                                                if (($option['is_correct'] ?? false) === true) {
+                                                    $hasCorrectOption = true;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (!$hasCorrectOption) {
+                                                $lastIndex = array_key_last($livewire->data['options_kurmanji']);
+                                                if ($lastIndex !== null) {
+                                                    $set("options_kurmanji.{$lastIndex}.is_correct", true);
+                                                }
+                                                Notification::make()
+                                                    ->warning()
+                                                    ->title('At least one Kurmanji option must be marked as correct')
+                                                    ->send();
+                                            }
+                                        }
+
+                                        foreach ($livewire->data['options_kurmanji'] as $option) {
+                                            if (($option['is_correct'] ?? false) === true) {
+                                                $set('correct_answer_kurmanji', $option['option'] ?? '');
+                                                break;
+                                            }
+                                        }
+                                    }),
+                            ])
+                            ->columns(2)
+                            ->maxItems(5)
+                            ->visible(fn(callable $get) => $get('question_type') === 'multi_choice')
+                            ->label('Answer Options (Kurmanji)')
+                            ->rules(['array'])
+                            ->default([])
+                            ->live()
+                            ->afterStateUpdated(function (callable $set, $livewire) {
+                                if (isset($livewire->data['options_kurmanji']) && is_array($livewire->data['options_kurmanji'])) {
+                                    foreach ($livewire->data['options_kurmanji'] as $option) {
+                                        if (($option['is_correct'] ?? false) === true) {
+                                            $set('correct_answer_kurmanji', $option['option'] ?? '');
+                                            break;
+                                        }
+                                    }
+                                }
+                            })
+                            ->beforeStateDehydrated(function (callable $set, $livewire) {
+                                if (isset($livewire->data['options_kurmanji']) && is_array($livewire->data['options_kurmanji'])) {
+                                    foreach ($livewire->data['options_kurmanji'] as $option) {
+                                        if (($option['is_correct'] ?? false) === true) {
+                                            $set('correct_answer_kurmanji', $option['option'] ?? '');
+                                            break;
+                                        }
+                                    }
+                                }
+                            }),
+
+                        Forms\Components\TextInput::make('correct_answer_kurmanji')
+                            ->visible(fn(callable $get) => in_array($get('question_type'), ['puzzle', 'pattern_recognition', 'math']))
+                            ->label('Correct Answer (Kurmanji)'),
+
+                        Forms\Components\Select::make('true_false_answer_kurmanji')
+                            ->options([
+                                'true' => 'True',
+                                'false' => 'False',
+                            ])
+                            ->visible(fn(callable $get) => $get('question_type') === 'true_false')
+                            ->reactive()
+                            ->afterStateUpdated(fn($state, callable $set) => $set('correct_answer_kurmanji', $state))
+                            ->label('Correct Answer (Kurmanji)'),
+
+                        Forms\Components\Hidden::make('correct_answer_kurmanji')
+                            ->dehydrateStateUsing(function (callable $get) {
+                                $questionType = $get('question_type');
+                                if ($questionType === 'multi_choice') {
+                                    $optionsKurmanji = $get('options_kurmanji') ?? [];
+                                    foreach ($optionsKurmanji as $option) {
+                                        if (($option['is_correct'] ?? false) === true) {
+                                            return $option['option'] ?? '';
+                                        }
+                                    }
+                                    return '';
+                                }
+
+                                return $get('correct_answer_kurmanji');
+                            }),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
 
                 Forms\Components\Section::make('Kurdish Translation')
                     ->schema([
