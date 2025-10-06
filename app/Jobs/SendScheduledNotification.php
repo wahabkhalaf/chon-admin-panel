@@ -28,8 +28,12 @@ class SendScheduledNotification implements ShouldQueue
             $notificationData = [
                 'title' => $this->notification->title,
                 'title_kurdish' => $this->notification->title_kurdish,
+                'title_arabic' => $this->notification->title_arabic,
+                'title_kurmanji' => $this->notification->title_kurmanji,
                 'message' => $this->notification->message,
                 'message_kurdish' => $this->notification->message_kurdish,
+                'message_arabic' => $this->notification->message_arabic,
+                'message_kurmanji' => $this->notification->message_kurmanji,
                 'type' => $this->notification->type,
                 'priority' => $this->notification->priority,
                 'data' => $this->notification->data ?? [],

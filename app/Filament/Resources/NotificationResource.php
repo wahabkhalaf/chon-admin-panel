@@ -42,6 +42,18 @@ class NotificationResource extends Resource
                             ->placeholder('Navê ragihandinê (Kurdî)')
                             ->disabled(fn($record) => $record && $record->status === 'sent'),
 
+                        Forms\Components\TextInput::make('title_arabic')
+                            ->label('Notification Title (Arabic)')
+                            ->maxLength(100)
+                            ->placeholder('عنوان الإشعار (عربي)')
+                            ->disabled(fn($record) => $record && $record->status === 'sent'),
+
+                        Forms\Components\TextInput::make('title_kurmanji')
+                            ->label('Notification Title (Kurmanji)')
+                            ->maxLength(100)
+                            ->placeholder('Navê ragihandinê (Kurmanjî)')
+                            ->disabled(fn($record) => $record && $record->status === 'sent'),
+
                         Forms\Components\Textarea::make('message')
                             ->label('Notification Message')
                             ->required()
@@ -55,6 +67,20 @@ class NotificationResource extends Resource
                             ->maxLength(500)
                             ->rows(3)
                             ->placeholder('Peyama ragihandinê (Kurdî)')
+                            ->disabled(fn($record) => $record && $record->status === 'sent'),
+
+                        Forms\Components\Textarea::make('message_arabic')
+                            ->label('Notification Message (Arabic)')
+                            ->maxLength(500)
+                            ->rows(3)
+                            ->placeholder('رسالة الإشعار (عربي)')
+                            ->disabled(fn($record) => $record && $record->status === 'sent'),
+
+                        Forms\Components\Textarea::make('message_kurmanji')
+                            ->label('Notification Message (Kurmanji)')
+                            ->maxLength(500)
+                            ->rows(3)
+                            ->placeholder('Peyama ragihandinê (Kurmanjî)')
                             ->disabled(fn($record) => $record && $record->status === 'sent'),
 
                         Forms\Components\Select::make('type')
@@ -151,8 +177,12 @@ class NotificationResource extends Resource
                                     $payload = [
                                         'title' => $get('title'),
                                         'title_kurdish' => $get('title_kurdish'),
+                                        'title_arabic' => $get('title_arabic'),
+                                        'title_kurmanji' => $get('title_kurmanji'),
                                         'message' => $get('message'),
                                         'message_kurdish' => $get('message_kurdish'),
+                                        'message_arabic' => $get('message_arabic'),
+                                        'message_kurmanji' => $get('message_kurmanji'),
                                         'type' => $get('type'),
                                         'priority' => $get('priority'),
                                         'data' => $get('data'),
@@ -301,8 +331,12 @@ class NotificationResource extends Resource
             $notificationData = [
                 'title' => $data['title'] ?? '',
                 'title_kurdish' => $data['title_kurdish'] ?? null,
+                'title_arabic' => $data['title_arabic'] ?? null,
+                'title_kurmanji' => $data['title_kurmanji'] ?? null,
                 'message' => $data['message'] ?? '',
                 'message_kurdish' => $data['message_kurdish'] ?? null,
+                'message_arabic' => $data['message_arabic'] ?? null,
+                'message_kurmanji' => $data['message_kurmanji'] ?? null,
                 'type' => $data['type'] ?? 'general',
                 'priority' => $data['priority'] ?? 'normal',
                 'data' => $data['data'] ?? [],
@@ -362,7 +396,13 @@ class NotificationResource extends Resource
 
             $notificationData = [
                 'title' => $notification->title,
+                'title_kurdish' => $notification->title_kurdish,
+                'title_arabic' => $notification->title_arabic,
+                'title_kurmanji' => $notification->title_kurmanji,
                 'message' => $notification->message,
+                'message_kurdish' => $notification->message_kurdish,
+                'message_arabic' => $notification->message_arabic,
+                'message_kurmanji' => $notification->message_kurmanji,
                 'type' => $notification->type,
                 'priority' => $notification->priority,
                 'data' => $notification->data ?? [],

@@ -61,16 +61,24 @@ class CompetitionObserver
         $notificationData = [
             'title' => 'New Competition Available! 🏆',
             'title_kurdish' => 'پێشبڕکێکی نوێ! 🏆',
+            'title_arabic' => 'مسابقة جديدة متاحة! 🏆',
+            'title_kurmanji' => 'Pêşbirkek Nû! 🏆',
             'message' => "New competition \"{$competition->name}\" is now available.",
             'message_kurdish' => "پێشبڕکێی \"" . ($competition->name_kurdish ?: $competition->name) . "\" ئێستا بەردەستە.",
+            'message_arabic' => "مسابقة جديدة \"" . ($competition->name_arabic ?: $competition->name) . "\" متاحة الآن.",
+            'message_kurmanji' => "Pêşbirk \"" . ($competition->name_kurmanji ?: $competition->name) . "\" niha berdest e.",
             'type' => 'competition',
             'priority' => 'high',
             'data' => [
                 'competitionId' => $competition->id,
                 'competitionName' => $competition->name,
                 'competitionNameKurdish' => $competition->name_kurdish,
+                'competitionNameArabic' => $competition->name_arabic,
+                'competitionNameKurmanji' => $competition->name_kurmanji,
                 'description' => $competition->description,
                 'descriptionKurdish' => $competition->description_kurdish,
+                'descriptionArabic' => $competition->description_arabic,
+                'descriptionKurmanji' => $competition->description_kurmanji,
                 'entryFee' => $competition->entry_fee,
                 'startTime' => $competition->start_time,
                 'gameType' => $competition->game_type,
@@ -83,8 +91,12 @@ class CompetitionObserver
         Notification::create([
             'title' => $notificationData['title'],
             'title_kurdish' => $notificationData['title_kurdish'],
+            'title_arabic' => $notificationData['title_arabic'],
+            'title_kurmanji' => $notificationData['title_kurmanji'],
             'message' => $notificationData['message'],
             'message_kurdish' => $notificationData['message_kurdish'],
+            'message_arabic' => $notificationData['message_arabic'],
+            'message_kurmanji' => $notificationData['message_kurmanji'],
             'type' => $notificationData['type'],
             'priority' => $notificationData['priority'],
             'data' => $notificationData['data'],
@@ -142,6 +154,20 @@ class CompetitionObserver
             default => "پێشبڕکێ لە {$minutesBefore} خولەکدا دەستپێدەکات! ⏰"
         };
         
+        $titleArabic = match($minutesBefore) {
+            15 => "المسابقة تبدأ خلال 15 دقيقة! 🎯",
+            5 => "المسابقة تبدأ خلال 5 دقائق! ⏰",
+            1 => "المسابقة تبدأ خلال دقيقة واحدة! 🚨",
+            default => "المسابقة تبدأ خلال {$minutesBefore} دقيقة! ⏰"
+        };
+        
+        $titleKurmanji = match($minutesBefore) {
+            15 => "Pêşbirk di 15 deqeyan de dest pê dike! 🎯",
+            5 => "Pêşbirk di 5 deqeyan de dest pê dike! ⏰",
+            1 => "Pêşbirk di 1 deqeyê de dest pê dike! 🚨",
+            default => "Pêşbirk di {$minutesBefore} deqeyan de dest pê dike! ⏰"
+        };
+        
         $message = match($minutesBefore) {
             15 => "\"{$competition->name}\" starts in 15 minutes! Don't miss out!",
             5 => "\"{$competition->name}\" starts in 5 minutes! Join now!",
@@ -155,20 +181,42 @@ class CompetitionObserver
             1 => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە ١ خولەکدا دەستپێدەکات! ئامادە بە!",
             default => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" لە {$minutesBefore} خولەکدا دەستپێدەکات!"
         };
+        
+        $messageArabic = match($minutesBefore) {
+            15 => "\"" . ($competition->name_arabic ?: $competition->name) . "\" تبدأ خلال 15 دقيقة! لا تفوتها!",
+            5 => "\"" . ($competition->name_arabic ?: $competition->name) . "\" تبدأ خلال 5 دقائق! انضم الآن!",
+            1 => "\"" . ($competition->name_arabic ?: $competition->name) . "\" تبدأ خلال دقيقة واحدة! استعد!",
+            default => "\"" . ($competition->name_arabic ?: $competition->name) . "\" تبدأ خلال {$minutesBefore} دقيقة!"
+        };
+        
+        $messageKurmanji = match($minutesBefore) {
+            15 => "\"" . ($competition->name_kurmanji ?: $competition->name) . "\" di 15 deqeyan de dest pê dike! Ji dest nedê!",
+            5 => "\"" . ($competition->name_kurmanji ?: $competition->name) . "\" di 5 deqeyan de dest pê dike! Niha beşdar bibe!",
+            1 => "\"" . ($competition->name_kurmanji ?: $competition->name) . "\" di 1 deqeyê de dest pê dike! Amade be!",
+            default => "\"" . ($competition->name_kurmanji ?: $competition->name) . "\" di {$minutesBefore} deqeyan de dest pê dike!"
+        };
 
         $notificationData = [
             'title' => $title,
             'title_kurdish' => $titleKurdish,
+            'title_arabic' => $titleArabic,
+            'title_kurmanji' => $titleKurmanji,
             'message' => $message,
             'message_kurdish' => $messageKurdish,
+            'message_arabic' => $messageArabic,
+            'message_kurmanji' => $messageKurmanji,
             'type' => 'competition',
             'priority' => 'high',
             'data' => [
                 'competitionId' => $competition->id,
                 'competitionName' => $competition->name,
                 'competitionNameKurdish' => $competition->name_kurdish,
+                'competitionNameArabic' => $competition->name_arabic,
+                'competitionNameKurmanji' => $competition->name_kurmanji,
                 'description' => $competition->description,
                 'descriptionKurdish' => $competition->description_kurdish,
+                'descriptionArabic' => $competition->description_arabic,
+                'descriptionKurmanji' => $competition->description_kurmanji,
                 'startTime' => $competition->start_time,
                 'gameType' => $competition->game_type,
             ]
@@ -178,8 +226,12 @@ class CompetitionObserver
         Notification::create([
             'title' => $notificationData['title'],
             'title_kurdish' => $notificationData['title_kurdish'],
+            'title_arabic' => $notificationData['title_arabic'],
+            'title_kurmanji' => $notificationData['title_kurmanji'],
             'message' => $notificationData['message'],
             'message_kurdish' => $notificationData['message_kurdish'],
+            'message_arabic' => $notificationData['message_arabic'],
+            'message_kurmanji' => $notificationData['message_kurmanji'],
             'type' => $notificationData['type'],
             'priority' => $notificationData['priority'],
             'data' => $notificationData['data'],
@@ -193,13 +245,20 @@ class CompetitionObserver
         $notificationData = [
             'title' => 'Competition Registration Open! 🎯',
             'title_kurdish' => 'خۆت تۆمار بکە بۆ پێشبڕکێ! 🎯',
+            'title_arabic' => 'تسجيل المسابقة مفتوح! 🎯',
+            'title_kurmanji' => 'Tomarê Pêşbirkê Vekirî! 🎯',
             'message' => "\"{$competition->name}\" is now open for registration! Join now!",
             'message_kurdish' => "خۆت تۆمار بکە بۆ \"" . ($competition->name_kurdish ?: $competition->name) . "\"! ئێستا دەستپێکرد!",
+            'message_arabic' => "\"" . ($competition->name_arabic ?: $competition->name) . "\" مفتوح الآن للتسجيل! انضم الآن!",
+            'message_kurmanji' => "Tomarê \"" . ($competition->name_kurmanji ?: $competition->name) . "\" vekirî ye! Niha beşdar bibe!",
             'type' => 'competition',
             'priority' => 'high',
             'data' => [
                 'competitionId' => $competition->id,
                 'competitionName' => $competition->name,
+                'competitionNameKurdish' => $competition->name_kurdish,
+                'competitionNameArabic' => $competition->name_arabic,
+                'competitionNameKurmanji' => $competition->name_kurmanji,
                 'entryFee' => $competition->entry_fee,
                 'startTime' => $competition->start_time,
                 'gameType' => $competition->game_type,
@@ -211,8 +270,12 @@ class CompetitionObserver
         Notification::create([
             'title' => $notificationData['title'],
             'title_kurdish' => $notificationData['title_kurdish'],
+            'title_arabic' => $notificationData['title_arabic'],
+            'title_kurmanji' => $notificationData['title_kurmanji'],
             'message' => $notificationData['message'],
             'message_kurdish' => $notificationData['message_kurdish'],
+            'message_arabic' => $notificationData['message_arabic'],
+            'message_kurmanji' => $notificationData['message_kurmanji'],
             'type' => $notificationData['type'],
             'priority' => $notificationData['priority'],
             'data' => $notificationData['data'],
@@ -227,16 +290,24 @@ class CompetitionObserver
         $notificationData = [
             'title' => 'Competition Started! 🚀',
             'title_kurdish' => 'پێشبڕکێ دەستپێکرد! 🚀',
+            'title_arabic' => 'بدأت المسابقة! 🚀',
+            'title_kurmanji' => 'Pêşbirk Dest Pê Kir! 🚀',
             'message' => "\"{$competition->name}\" has started! Good luck to all participants!",
             'message_kurdish' => "\"" . ($competition->name_kurdish ?: $competition->name) . "\" دەستپێکرد! سەردەمی باش بۆ هەموو بەشداربووان!",
+            'message_arabic' => "\"" . ($competition->name_arabic ?: $competition->name) . "\" بدأت! حظاً سعيداً لجميع المشاركين!",
+            'message_kurmanji' => "\"" . ($competition->name_kurmanji ?: $competition->name) . "\" dest pê kir! Bextê baş ji bo hemû beşdarvan!",
             'type' => 'competition',
             'priority' => 'normal',
             'data' => [
                 'competitionId' => $competition->id,
                 'competitionName' => $competition->name,
                 'competitionNameKurdish' => $competition->name_kurdish,
+                'competitionNameArabic' => $competition->name_arabic,
+                'competitionNameKurmanji' => $competition->name_kurmanji,
                 'description' => $competition->description,
                 'descriptionKurdish' => $competition->description_kurdish,
+                'descriptionArabic' => $competition->description_arabic,
+                'descriptionKurmanji' => $competition->description_kurmanji,
                 'startTime' => $competition->start_time,
                 'gameType' => $competition->game_type,
             ]
@@ -247,8 +318,12 @@ class CompetitionObserver
         Notification::create([
             'title' => $notificationData['title'],
             'title_kurdish' => $notificationData['title_kurdish'],
+            'title_arabic' => $notificationData['title_arabic'],
+            'title_kurmanji' => $notificationData['title_kurmanji'],
             'message' => $notificationData['message'],
             'message_kurdish' => $notificationData['message_kurdish'],
+            'message_arabic' => $notificationData['message_arabic'],
+            'message_kurmanji' => $notificationData['message_kurmanji'],
             'type' => $notificationData['type'],
             'priority' => $notificationData['priority'],
             'data' => $notificationData['data'],

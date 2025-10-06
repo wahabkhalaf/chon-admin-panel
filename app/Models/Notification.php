@@ -12,8 +12,12 @@ class Notification extends Model
     protected $fillable = [
         'title',
         'title_kurdish',
+        'title_arabic',
+        'title_kurmanji',
         'message',
         'message_kurdish',
+        'message_arabic',
+        'message_kurmanji',
         'type',
         'priority',
         'data',

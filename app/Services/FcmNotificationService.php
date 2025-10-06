@@ -948,8 +948,12 @@ class FcmNotificationService
             $testData = [
                 'title' => 'Test Title',
                 'title_kurdish' => 'Test Title Kurdish',
+                'title_arabic' => 'عنوان الاختبار',
+                'title_kurmanji' => 'Navê Testê (Kurmanjî)',
                 'message' => 'Test Message',
                 'message_kurdish' => 'Test Message Kurdish',
+                'message_arabic' => 'رسالة الاختبار',
+                'message_kurmanji' => 'Peyama Testê (Kurmanjî)',
                 'type' => 'general',
                 'priority' => 'normal',
                 'data' => [
