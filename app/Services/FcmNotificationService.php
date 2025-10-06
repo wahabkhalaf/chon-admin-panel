@@ -317,8 +317,24 @@ class FcmNotificationService
             $message = $message->withApnsConfig($apnsConfig);
 
             // Only add data if it's simple and safe - ensure all values are strings
+            $dataForFcm = [];
             if (!empty($notificationData['data']) && is_array($notificationData['data'])) {
-                $safeData = $this->cleanDataForFcm($notificationData['data']);
+                $dataForFcm = $notificationData['data'];
+            }
+
+            // Merge multilingual fields into data payload so frontend can localize
+            $multiLangKeys = [
+                'title_kurdish', 'title_arabic', 'title_kurmanji',
+                'message_kurdish', 'message_arabic', 'message_kurmanji',
+            ];
+            foreach ($multiLangKeys as $key) {
+                if (array_key_exists($key, $notificationData) && $notificationData[$key] !== null && $notificationData[$key] !== '') {
+                    $dataForFcm[$key] = $notificationData[$key];
+                }
+            }
+
+            if (!empty($dataForFcm)) {
+                $safeData = $this->cleanDataForFcm($dataForFcm);
                 if (!empty($safeData)) {
                     // Double-check that all values are strings
                     foreach ($safeData as $key => $value) {
