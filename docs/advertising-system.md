@@ -7,8 +7,8 @@ The advertising system allows administrators to manage company advertisements wi
 - **Company Information**: Store company name and phone number
 - **Image Management**: Upload and manage advertisement images
 - **Status Control**: Activate/deactivate advertisements
-- **File Support**: Accepts JPEG, JPG, and PNG formats
-- **Image Optimization**: Automatic resizing and cropping
+- **File Support**: Accepts JPEG, JPG, PNG, and GIF formats
+- **Image Optimization**: Automatic resizing and cropping (preserves GIF animations)
 
 ## Database Structure
 The `advertisements` table contains:
@@ -29,10 +29,11 @@ Navigate to `/admin/advertisings` in the admin panel to:
 - Toggle advertisement status
 
 ## Image Requirements
-- **Formats**: JPEG, JPG, PNG
-- **Max Size**: 5MB
-- **Aspect Ratio**: 16:9 (automatically enforced)
-- **Target Dimensions**: 800x450 pixels
+- **Formats**: JPEG, JPG, PNG, GIF
+- **Max Size**: 10MB (increased for GIF files)
+- **Aspect Ratio**: 16:9 (automatically enforced for static images)
+- **Target Dimensions**: 800x450 pixels (for static images)
+- **GIF Support**: Animated GIFs are preserved without processing
 - **Storage**: Public disk in `storage/app/public/advertisements/`
 
 ## Usage Examples
@@ -64,8 +65,9 @@ The system stores image URLs that can be accessed via:
 ## File Management
 - Images are stored in the public storage disk
 - Automatic cleanup when advertisements are deleted
-- Image optimization and resizing handled automatically
+- Image optimization and resizing handled automatically (preserves GIF animations)
 - Support for image editing within the admin panel
+- GIF files maintain their animation without processing
 
 ## Security Features
 - File type validation

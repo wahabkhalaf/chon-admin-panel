@@ -42,8 +42,8 @@
                         <label for="image" class="block text-sm font-medium text-gray-700 mb-2">Image</label>
                         <input type="file" name="image" id="image" 
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                               accept=".jpeg,.jpg,.JPG,.png" required>
-                        <p class="text-sm text-gray-500 mt-1">Accepted formats: JPEG, JPG, PNG (Max size: 2MB)</p>
+                               accept=".jpeg,.jpg,.JPG,.png,.gif,.GIF" required>
+                        <p class="text-sm text-gray-500 mt-1">Accepted formats: JPEG, JPG, PNG, GIF (Max size: 10MB)</p>
                         @error('image')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror

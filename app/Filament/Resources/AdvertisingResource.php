@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\AdvertisingResource\Pages;
+use App\Filament\Components\AnimatedImageUpload;
 use App\Models\Advertising;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -36,17 +37,17 @@ class AdvertisingResource extends Resource
                             ->maxLength(20)
                             ->placeholder('Enter phone number'),
 
-                        Forms\Components\FileUpload::make('image')
+                        AnimatedImageUpload::make('image')
                             ->label('Advertisement Image')
                             ->image()
                             ->imageEditor()
                             ->imageCropAspectRatio('16:9')
                             ->imageResizeTargetWidth('800')
                             ->imageResizeTargetHeight('450')
-                            ->acceptedFileTypes(['image/jpeg', 'image/jpg', 'image/png'])
-                            ->maxSize(5120) // 5MB
+                            ->acceptedFileTypes(['image/jpeg', 'image/jpg', 'image/png', 'image/gif'])
+                            ->maxSize(10240) // 10MB (increased for GIFs)
                             ->required()
-                            ->helperText('Accepted formats: JPEG, JPG, PNG. Max size: 5MB')
+                            ->helperText('Accepted formats: JPEG, JPG, PNG, GIF. Max size: 10MB. Note: GIF animations will be preserved.')
                             ->disk('public')
                             ->directory('advertisements'),
 
