@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Response;
 
 Route::get('/', function () {
-    return view('welcome');
-});
+    return redirect('/admin');
+})->name('welcome');
 
 // API routes for language functionality
 Route::prefix('api/language')->group(function () {

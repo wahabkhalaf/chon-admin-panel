@@ -67,3 +67,20 @@
 - Keep tests maintainable and readable
 - Follow single responsibility principle
 - Document complex test scenarios
+
+
+
+use docker-compose for consistent environments
+- Regularly review and refactor tests
+- Stay updated with Pest and Filament releases
+- Engage with the community for best practices and support
+- Use version control for test files
+- Ensure tests are part of the CI/CD pipeline
+- Use meaningful commit messages for test changes
+- Regularly run tests locally before pushing changes
+- Monitor test coverage and aim for high coverage
+- Use static analysis tools to ensure code quality
+- Avoid hardcoding values; use configuration files or environment variables
+- Ensure tests are idempotent and can run in any order
+- Use factories and seeders for test data
+- Mock external services and APIs
