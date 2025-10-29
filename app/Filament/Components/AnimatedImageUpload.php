@@ -3,7 +3,6 @@
 namespace App\Filament\Components;
 
 use Filament\Forms\Components\FileUpload;
-use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 
@@ -18,9 +17,7 @@ class AnimatedImageUpload extends FileUpload
                 return;
             }
 
-            $disk = $component->getDisk();
-            // Ensure $disk is a string, not an array
-            $disk = is_array($disk) ? ($disk[0] ?? 'public') : ($disk ?? 'public');
+            $disk = $component->getDisk(); // Returns Filesystem object
             $directory = $component->getDirectory();
             
             // Get the file path
@@ -28,8 +25,8 @@ class AnimatedImageUpload extends FileUpload
             $fullPath = $directory ? $directory . '/' . $filePath : $filePath;
             
             // Check if it's a GIF file
-            if (Storage::disk($disk)->exists($fullPath)) {
-                $mimeType = Storage::disk($disk)->mimeType($fullPath);
+            if ($disk->exists($fullPath)) {
+                $mimeType = $disk->mimeType($fullPath);
                 
                 if ($mimeType === 'image/gif') {
                     // For GIF files, we don't process them to preserve animation
@@ -49,19 +46,17 @@ class AnimatedImageUpload extends FileUpload
             return;
         }
 
-        $disk = $component->getDisk();
-        // Ensure $disk is a string, not an array
-        $disk = is_array($disk) ? ($disk[0] ?? 'public') : ($disk ?? 'public');
+        $disk = $component->getDisk(); // Returns Filesystem object
         $directory = $component->getDirectory();
         
         $filePath = is_array($state) ? $state[0] : $state;
         $fullPath = $directory ? $directory . '/' . $filePath : $filePath;
         
-        if (!Storage::disk($disk)->exists($fullPath)) {
+        if (!$disk->exists($fullPath)) {
             return;
         }
 
-        $mimeType = Storage::disk($disk)->mimeType($fullPath);
+        $mimeType = $disk->mimeType($fullPath);
         
         // Skip processing for GIF files to preserve animation
         if ($mimeType === 'image/gif') {
@@ -70,13 +65,13 @@ class AnimatedImageUpload extends FileUpload
 
         try {
             $manager = new ImageManager(new Driver());
-            $image = $manager->read(Storage::disk($disk)->get($fullPath));
+            $image = $manager->read($disk->get($fullPath));
             
             // Apply aspect ratio and resize for non-GIF images
             $image->cover(800, 450);
             
             // Save the processed image
-            Storage::disk($disk)->put($fullPath, $image->encode());
+            $disk->put($fullPath, $image->encode());
         } catch (\Exception $e) {
             // If image processing fails, leave the original file
             \Log::warning('Image processing failed: ' . $e->getMessage());
