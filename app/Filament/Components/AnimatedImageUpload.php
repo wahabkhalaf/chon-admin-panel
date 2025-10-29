@@ -19,6 +19,8 @@ class AnimatedImageUpload extends FileUpload
             }
 
             $disk = $component->getDisk();
+            // Ensure $disk is a string, not an array
+            $disk = is_array($disk) ? ($disk[0] ?? 'public') : ($disk ?? 'public');
             $directory = $component->getDirectory();
             
             // Get the file path
@@ -48,6 +50,8 @@ class AnimatedImageUpload extends FileUpload
         }
 
         $disk = $component->getDisk();
+        // Ensure $disk is a string, not an array
+        $disk = is_array($disk) ? ($disk[0] ?? 'public') : ($disk ?? 'public');
         $directory = $component->getDirectory();
         
         $filePath = is_array($state) ? $state[0] : $state;
