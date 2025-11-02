@@ -45,9 +45,9 @@ class AdvertisingResource extends Resource
                             ->imageResizeTargetWidth('800')
                             ->imageResizeTargetHeight('450')
                             ->acceptedFileTypes(['image/jpeg', 'image/jpg', 'image/png', 'image/gif'])
-                            ->maxSize(10240) // 10MB (increased for GIFs)
+                            ->maxSize(26624) // 26MB (increased for GIFs)
                             ->required()
-                            ->helperText('Accepted formats: JPEG, JPG, PNG, GIF. Max size: 10MB. Note: GIF animations will be preserved.')
+                            ->helperText('Accepted formats: JPEG, JPG, PNG, GIF. Max size: 26MB. Note: GIF animations will be preserved.')
                             ->disk('public')
                             ->directory('advertisements'),
 
