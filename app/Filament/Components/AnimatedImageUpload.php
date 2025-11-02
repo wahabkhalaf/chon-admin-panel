@@ -12,19 +12,7 @@ class AnimatedImageUpload extends FileUpload
     {
         parent::setUp();
         
-        // Intercept the upload BEFORE Filament processes it
-        $this->afterUpload(function ($file, $component) {
-            // Check if uploaded file is a GIF BEFORE any processing
-            $mimeType = $file->getMimeType();
-            
-            if ($mimeType === 'image/gif') {
-                // Store flag to skip any processing
-                $this->state('_is_gif', true);
-                // GIF will be stored as-is without any modifications
-                return;
-            }
-        });
-        
+        // Process files after they're stored by Filament
         $this->afterStateUpdated(function ($state, $component) {
             if (!$state) {
                 return;
