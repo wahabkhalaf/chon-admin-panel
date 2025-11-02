@@ -12,6 +12,19 @@ class AnimatedImageUpload extends FileUpload
     {
         parent::setUp();
         
+        // Intercept the upload BEFORE Filament processes it
+        $this->afterUpload(function ($file, $component) {
+            // Check if uploaded file is a GIF BEFORE any processing
+            $mimeType = $file->getMimeType();
+            
+            if ($mimeType === 'image/gif') {
+                // Store flag to skip any processing
+                $this->state('_is_gif', true);
+                // GIF will be stored as-is without any modifications
+                return;
+            }
+        });
+        
         $this->afterStateUpdated(function ($state, $component) {
             if (!$state) {
                 return;
@@ -24,13 +37,12 @@ class AnimatedImageUpload extends FileUpload
             $filePath = is_array($state) ? $state[0] : $state;
             $fullPath = $directory ? $directory . '/' . $filePath : $filePath;
             
-            // Check if it's a GIF file
+            // Check if it's a GIF file - if so, skip all processing
             if ($disk->exists($fullPath)) {
                 $mimeType = $disk->mimeType($fullPath);
                 
                 if ($mimeType === 'image/gif') {
-                    // For GIF files, we don't process them to preserve animation
-                    // Just ensure they're stored correctly
+                    // GIF files are preserved as-is - no processing applied
                     return;
                 }
             }
