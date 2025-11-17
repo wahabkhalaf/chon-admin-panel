@@ -40,10 +40,8 @@ class AdvertisingResource extends Resource
                         AnimatedImageUpload::make('image')
                             ->label('Advertisement Image')
                             ->image()
-                            // Note: imageEditor removed to preserve GIF animations
-                            // Image processing is handled by AnimatedImageUpload component
                             ->acceptedFileTypes(['image/jpeg', 'image/jpg', 'image/png', 'image/gif'])
-                            ->maxSize(26624) // 26MB (increased for GIFs)
+                            ->maxSize(26624) 
                             ->required()
                             ->helperText('Accepted formats: JPEG, JPG, PNG, GIF. Max size: 26MB. GIF animations will be preserved. Static images will be resized to 800x450.')
                             ->disk('public')
