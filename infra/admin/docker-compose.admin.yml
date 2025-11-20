@@ -1,0 +1,55 @@
+services:
+  admin:
+    build:
+      context: ../../chon-admin-panel
+      dockerfile: ../chon-api/infra/admin/Dockerfile
+    container_name: chon_admin_panel
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      APP_NAME: "CHON Admin"
+      APP_ENV: production
+      APP_KEY: ${ADMIN_APP_KEY}
+      APP_DEBUG: false
+      APP_URL: http://admin.chonapp.net
+      
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB:-chon}
+      DB_USERNAME: ${POSTGRES_USER:-chon}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      
+      # Use same Redis as main app
+      CACHE_DRIVER: redis
+      QUEUE_CONNECTION: redis
+      SESSION_DRIVER: redis
+      
+      REDIS_HOST: redis
+      REDIS_PASSWORD: null
+      REDIS_PORT: 6379
+      
+      # API connection
+      CHON_API_URL: http://api:3000
+      CHON_API_KEY: ${ADMIN_API_KEY}
+      
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - chon_network
+    volumes:
+      - admin_storage:/var/www/html/storage/app
+      - admin_logs:/var/www/html/storage/logs
+
+networks:
+  chon_network:
+    external: true
+    name: chon_chon_network
+
+volumes:
+  admin_storage:
+    name: chon_admin_storage
+  admin_logs:
+    name: chon_admin_logs
