@@ -1,7 +1,7 @@
 # ==========================================
 # CHON Admin Panel - Laravel + Filament
 # ==========================================
-FROM php:8.2-fpm-alpine
+FROM php:8.3-fpm-alpine
 
 # Install system dependencies
 RUN apk add --no-cache \
