@@ -17,9 +17,9 @@ services:
       DB_CONNECTION: pgsql
       DB_HOST: chon_postgres_prod
       DB_PORT: 5432
-      DB_DATABASE: ${POSTGRES_DB:-chon}
-      DB_USERNAME: ${POSTGRES_USER:-chon}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_DATABASE: chon_production
+      DB_USERNAME: chon_prod_user
+      DB_PASSWORD: B5aeU9p62I3VsSvpVlgozG04QkFgUQdQvHDmg4Bsrcc=
       
       # Use same Redis as main app
       CACHE_DRIVER: redis
