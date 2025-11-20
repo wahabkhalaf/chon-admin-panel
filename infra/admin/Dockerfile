@@ -32,12 +32,11 @@ WORKDIR /var/www/html
 # Copy application files
 COPY . .
 
-# Create required directories and placeholder for Firebase credentials
-RUN mkdir -p storage/app/firebase storage/logs bootstrap/cache && \
-    echo '{}' > storage/app/firebase/firebase-service-account.json
+# Create required directories
+RUN mkdir -p storage/app/firebase storage/logs bootstrap/cache
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Install PHP dependencies (skip scripts to avoid Firebase validation during build)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 # Install NPM dependencies and build assets
 RUN npm ci && npm run build
@@ -51,8 +50,12 @@ COPY infra/admin/nginx-default.conf /etc/nginx/http.d/default.conf
 # Copy Supervisor config
 COPY infra/admin/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
+# Copy entrypoint script
+COPY infra/admin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Expose port
 EXPOSE 80
 
-# Start Supervisor
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Use entrypoint script
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
