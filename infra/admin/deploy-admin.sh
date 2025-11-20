@@ -31,10 +31,6 @@ docker compose -f docker-compose.admin.yml up -d
 echo "⏳ Waiting for container to be ready..."
 sleep 5
 
-# Run migrations
-echo "🗄️  Running migrations..."
-docker exec chon_admin_panel php artisan migrate --force
-
 # Clear caches
 echo "🧹 Clearing caches..."
 docker exec chon_admin_panel php artisan config:cache
