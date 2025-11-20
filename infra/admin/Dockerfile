@@ -16,10 +16,12 @@ RUN apk add --no-cache \
     unzip \
     postgresql-dev \
     nodejs \
-    npm
+    npm \
+    icu-dev \
+    libzip-dev
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd intl zip
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -40,10 +42,10 @@ RUN npm ci && npm run build
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Copy Nginx config
-COPY ./docker/nginx/default.conf /etc/nginx/http.d/default.conf
+COPY infra/admin/nginx-default.conf /etc/nginx/http.d/default.conf
 
 # Copy Supervisor config
-COPY ./docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY infra/admin/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Expose port
 EXPOSE 80
