@@ -9,7 +9,7 @@ mkdir -p /var/www/html/storage/app/firebase
 # Create placeholder if Firebase credentials don't exist
 if [ ! -f /var/www/html/storage/app/firebase/firebase-service-account.json ]; then
     echo "⚠️  Firebase credentials not found, creating placeholder..."
-    echo '{"type":"service_account","project_id":"placeholder","client_email":"placeholder@placeholder.iam.gserviceaccount.com","private_key":"-----BEGIN PRIVATE KEY-----\nplaceholder\n-----END PRIVATE KEY-----\n"}' > /var/www/html/storage/app/firebase/firebase-service-account.json
+    echo '{"type":"service_account","project_id":"placeholder","client_email":"placeholder@placeholder.iam.gserviceaccount.com","private_key":"-----BEGIN PRIVATE KEY-----\nplaceholder\n-----END PRIVATE KEY-----\n"}' > /var/www/html/storage/app/firebase/firebase-service-account.json 2>/dev/null || echo "⚠️  Could not create placeholder, continuing..."
 fi
 
 # Run package discovery (deferred from build)
