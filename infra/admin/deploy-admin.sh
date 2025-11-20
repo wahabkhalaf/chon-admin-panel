@@ -16,13 +16,13 @@ if [ ! -d "docker" ]; then
   mkdir -p docker/nginx docker/supervisor
 fi
 
-cp /opt/chon/infra/admin/nginx-default.conf docker/nginx/default.conf
-cp /opt/chon/infra/admin/supervisord.conf docker/supervisor/supervisord.conf
-cp /opt/chon/infra/admin/Dockerfile Dockerfile
+cp /opt/chon-admin-panel/infra/admin/nginx-default.conf docker/nginx/default.conf
+cp /opt/chon-admin-panel/infra/admin/supervisord.conf docker/supervisor/supervisord.conf
+cp /opt/chon-admin-panel/infra/admin/Dockerfile Dockerfile
 
 # Build and start
 echo "🏗️  Building Docker image..."
-cd /opt/chon/infra/admin
+cd /opt/chon-admin-panel/infra/admin
 docker compose -f docker-compose.admin.yml build
 
 echo "🚀 Starting admin panel..."
