@@ -29,17 +29,9 @@ echo "🚀 Starting admin panel..."
 docker compose -f docker-compose.admin.yml up -d
 
 echo "⏳ Waiting for container to be ready..."
-sleep 5
-
-# Clear caches
-echo "🧹 Clearing caches..."
-docker exec chon_admin_panel php artisan config:cache
-docker exec chon_admin_panel php artisan route:cache
-docker exec chon_admin_panel php artisan view:cache
-
-# Create admin user if needed
-echo "👤 Creating admin user (if not exists)..."
-docker exec chon_admin_panel php artisan make:filament-user || true
+sleep 10
 
 echo "✅ Admin panel deployed successfully!"
 echo "🌐 Access at: http://167.71.138.109:8080"
+echo ""
+echo "📋 Check logs with: docker logs -f chon_admin_panel"
