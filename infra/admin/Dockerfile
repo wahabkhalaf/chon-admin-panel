@@ -39,7 +39,7 @@ RUN mkdir -p storage/app/firebase storage/logs bootstrap/cache
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 # Install NPM dependencies and build assets
-RUN npm ci && npm run build
+RUN npm install && npm run build
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
