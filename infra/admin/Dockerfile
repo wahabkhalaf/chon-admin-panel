@@ -32,6 +32,10 @@ WORKDIR /var/www/html
 # Copy application files
 COPY . .
 
+# Create required directories and placeholder for Firebase credentials
+RUN mkdir -p storage/app/firebase storage/logs bootstrap/cache && \
+    echo '{}' > storage/app/firebase/firebase-service-account.json
+
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
