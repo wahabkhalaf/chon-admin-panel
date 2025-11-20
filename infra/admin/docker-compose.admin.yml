@@ -39,6 +39,7 @@ services:
     volumes:
       - admin_storage:/var/www/html/storage/app
       - admin_logs:/var/www/html/storage/logs
+      - ../../storage/app/firebase:/var/www/html/storage/app/firebase:ro
 
 networks:
   chon_network:
