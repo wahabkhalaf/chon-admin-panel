@@ -2,6 +2,18 @@
 
 This directory contains Docker configuration for the Laravel Filament admin panel.
 
+## ⚠️ Important: Environment Variables
+
+Before deploying, create a `.env` file in `/opt/chon-admin-panel/infra/admin/`:
+
+```bash
+# Generate with: php artisan key:generate --show (or use existing from .env)
+ADMIN_APP_KEY=base64:LksPFZWbKLAh+JTwhZuP/P7si4Qp8S89KqPleGGt45Q=
+
+# API Key for communicating with CHON API (optional)
+ADMIN_API_KEY=your_api_key_here
+```
+
 ## 📁 Structure
 
 ```

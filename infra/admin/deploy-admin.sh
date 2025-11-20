@@ -28,10 +28,17 @@ docker compose -f docker-compose.admin.yml build
 echo "🚀 Starting admin panel..."
 docker compose -f docker-compose.admin.yml up -d
 
-echo "⏳ Waiting for container to be ready..."
+echo "⏳ Waiting for container to initialize..."
 sleep 10
 
-echo "✅ Admin panel deployed successfully!"
+echo "📋 Checking container logs..."
+docker logs --tail 50 chon_admin_panel
+
+echo ""
+echo "✅ Deployment complete!"
 echo "🌐 Access at: http://167.71.138.109:8080"
 echo ""
-echo "📋 Check logs with: docker logs -f chon_admin_panel"
+echo "💡 Useful commands:"
+echo "   View logs: docker logs -f chon_admin_panel"
+echo "   Laravel logs: docker exec chon_admin_panel tail -f storage/logs/laravel.log"
+echo "   Shell access: docker exec -it chon_admin_panel sh"
