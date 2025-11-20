@@ -11,10 +11,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Run the competition seeder which creates questions and competitions
-        $this->call(CompetitionFullSeeder::class);
-        
-        // Run the advertising seeder
-        $this->call(AdvertisingSeeder::class);
+        // create admin user
+        \App\Models\User::factory()->create([
+            'name' => 'Admin User',
+            'email' => 'admin@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'admin',
+        ]);
     }
 }
