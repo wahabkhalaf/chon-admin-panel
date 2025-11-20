@@ -29,6 +29,9 @@ php artisan view:cache || echo "⚠️  View cache failed"
 # Set proper permissions
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
+# Create supervisor log directory
+mkdir -p /var/log/supervisor
+
 echo "✅ Initialization complete!"
 
 # Start supervisor
