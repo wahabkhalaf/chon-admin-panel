@@ -43,7 +43,7 @@ services:
 networks:
   chon_network:
     external: true
-    name: chon_chon_network
+    name: chon_prod_network
 
 volumes:
   admin_storage:
