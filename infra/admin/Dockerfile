@@ -21,9 +21,7 @@ RUN apk add --no-cache \
     libzip-dev
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd intl zip && \
-    pecl install redis && \
-    docker-php-ext-enable redis
+RUN docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd intl zip
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

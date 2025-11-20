@@ -21,15 +21,6 @@ services:
       DB_USERNAME: chon_prod_user
       DB_PASSWORD: B5aeU9p62I3VsSvpVlgozG04QkFgUQdQvHDmg4Bsrcc=
       
-      # Use same Redis as main app
-      CACHE_DRIVER: redis
-      QUEUE_CONNECTION: redis
-      SESSION_DRIVER: redis
-      
-      REDIS_HOST: chon_redis_prod
-      REDIS_PASSWORD: null
-      REDIS_PORT: 6379
-      
       # API connection
       CHON_API_URL: http://chon_api_prod:3000
       CHON_API_KEY: ${ADMIN_API_KEY}
