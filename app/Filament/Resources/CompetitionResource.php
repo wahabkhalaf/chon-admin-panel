@@ -36,7 +36,6 @@ class CompetitionResource extends Resource
                     if ($record && !$record->isUpcoming()) {
                         $statusText = $record->isOpen() ? 'open for registration' :
                             ($record->isActive() ? 'active' : 'completed');
-
                         return "Competition Status: " . ucfirst($statusText) . " (Read Only)";
                     }
                     return 'Basic Information';
@@ -166,7 +165,7 @@ class CompetitionResource extends Resource
                     ->schema([
                         Forms\Components\DateTimePicker::make('open_time')
                             ->required()
-                            ->minDate(now())
+                           ->now(config('app.display_timezone'))
                             ->label('Registration Opens')
                             ->helperText('When users can start registering for this competition')
                             ->live()
