@@ -165,7 +165,7 @@ class CompetitionResource extends Resource
                     ->schema([
                         Forms\Components\DateTimePicker::make('open_time')
                             ->required()
-                           ->now(config('app.display_timezone'))
+                             ->default(now()->setTimezone(config('app.display_timezone')))
                             ->label('Registration Opens')
                             ->helperText('When users can start registering for this competition')
                             ->live()
