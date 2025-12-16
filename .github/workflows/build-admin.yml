@@ -53,7 +53,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
+          file: ./infra/admin/Dockerfile
           push: true
           tags: |
             ${{ env.ADMIN_IMAGE }}:${{ steps.meta.outputs.short_sha }}
@@ -75,4 +75,5 @@ jobs:
       - name: Deployment ready
         run: |
           echo "✅ Admin panel image pushed successfully"
-          echo "Deploy to droplet with: ssh root@ADMIN_IP 'cd /opt/chon && IMAGE_TAG=${{ steps.meta.outputs.short_sha }} docker compose -f docker-compose.admin.yml pull && docker compose -f docker-compose.admin.yml up -d'"
+          echo "Deploy command:"
+          echo "ssh root@134.209.27.138 'cd /opt/chon && IMAGE_TAG=${{ steps.meta.outputs.short_sha }} docker compose -f docker-compose.admin.yml pull && docker compose -f docker-compose.admin.yml up -d'"
