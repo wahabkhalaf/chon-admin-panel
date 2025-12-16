@@ -1,0 +1,78 @@
+name: Build and Push Admin to DOCR
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  REGISTRY: registry.digitalocean.com/chon
+  ADMIN_IMAGE: registry.digitalocean.com/chon/admin
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Log in to DigitalOcean Container Registry
+        run: doctl registry login --expiry-seconds 1200
+
+      - name: Extract metadata for versioning
+        id: meta
+        run: |
+          # Get short SHA
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          
+          # Default tag is commit SHA
+          VERSION="latest"
+          
+          # If this is a tag push, also add version tag
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          fi
+          
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+
+      - name: Build and push Admin image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.ADMIN_IMAGE }}:${{ steps.meta.outputs.short_sha }}
+            ${{ env.ADMIN_IMAGE }}:latest
+            ${{ steps.meta.outputs.version != 'latest' && format('{0}:{1}', env.ADMIN_IMAGE, steps.meta.outputs.version) || '' }}
+          cache-from: type=registry,ref=${{ env.ADMIN_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.ADMIN_IMAGE }}:buildcache,mode=max
+          platforms: linux/amd64
+          build-args: |
+            BUILD_DATE=${{ steps.meta.outputs.date }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ steps.meta.outputs.version }}
+
+      - name: Image digest
+        run: |
+          echo "Admin Image: ${{ env.ADMIN_IMAGE }}:${{ steps.meta.outputs.short_sha }}"
+          echo "Deploy with: IMAGE_TAG=${{ steps.meta.outputs.short_sha }}"
+
+      - name: Deployment ready
+        run: |
+          echo "✅ Admin panel image pushed successfully"
+          echo "Deploy to droplet with: ssh root@ADMIN_IP 'cd /opt/chon && IMAGE_TAG=${{ steps.meta.outputs.short_sha }} docker compose -f docker-compose.admin.yml pull && docker compose -f docker-compose.admin.yml up -d'"
