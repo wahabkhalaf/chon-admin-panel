@@ -6,10 +6,18 @@ echo "🚀 Starting CHON Admin Panel..."
 # Ensure Firebase credentials directory exists
 mkdir -p /var/www/html/storage/app/firebase
 
-# Create placeholder if Firebase credentials don't exist
+# Verify Firebase credentials exist (should be mounted as volume)
 if [ ! -f /var/www/html/storage/app/firebase/firebase-service-account.json ]; then
-    echo "⚠️  Firebase credentials not found, creating placeholder..."
-    echo '{"type":"service_account","project_id":"placeholder","client_email":"placeholder@placeholder.iam.gserviceaccount.com","private_key":"-----BEGIN PRIVATE KEY-----\nplaceholder\n-----END PRIVATE KEY-----\n"}' > /var/www/html/storage/app/firebase/firebase-service-account.json 2>/dev/null || echo "⚠️  Could not create placeholder, continuing..."
+    echo "❌ ERROR: Firebase credentials not found!"
+    echo "Make sure docker-compose.yml mounts the Firebase credentials file:"
+    echo "  - /opt/chon/firebase-service-account.json:/var/www/html/storage/app/firebase/firebase-service-account.json:ro"
+    # Don't exit - allow container to start for debugging
+else
+    echo "✅ Firebase credentials loaded"
+    # Validate that the credentials file contains a valid private key
+    if ! grep -q '"private_key".*BEGIN PRIVATE KEY' /var/www/html/storage/app/firebase/firebase-service-account.json; then
+        echo "⚠️  WARNING: Firebase credentials may be invalid (no valid private key found)"
+    fi
 fi
 
 # Run package discovery (deferred from build)
