@@ -50,6 +50,41 @@ class Competition extends Model
         'end_time' => 'datetime'
     ];
 
+    /**
+     * Query scopes for performance optimization
+     */
+    public function scopeUpcoming($query)
+    {
+        return $query->where('open_time', '>', now());
+    }
+
+    public function scopeOpen($query)
+    {
+        return $query->where('open_time', '<=', now())
+                     ->where('start_time', '>', now());
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('start_time', '<=', now())
+                     ->where('end_time', '>', now());
+    }
+
+    public function scopeCompleted($query)
+    {
+        return $query->where('end_time', '<=', now());
+    }
+
+    public function scopeWithPlayerCount($query)
+    {
+        return $query->withCount('registrations');
+    }
+
+    public function scopeWithQuestionCount($query)
+    {
+        return $query->withCount('questions');
+    }
+
     public function getStatus(): string
     {
         $current = now();

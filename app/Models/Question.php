@@ -67,6 +67,26 @@ class Question extends Model
     ];
 
     /**
+     * Query scopes for performance optimization
+     */
+    public function scopeByLevel($query, string $level)
+    {
+        return $query->where('level', $level);
+    }
+
+    public function scopeByType($query, string $type)
+    {
+        return $query->where('question_type', $type);
+    }
+
+    public function scopeWithCompetitions($query)
+    {
+        return $query->with(['competitions' => function ($q) {
+            $q->select(['competitions.id', 'competitions.name']);
+        }]);
+    }
+
+    /**
      * The competitions that include this question.
      */
     public function competitions(): BelongsToMany

@@ -68,7 +68,52 @@ class Player extends Model
     }
 
     /**
-     * Get the transactions for the player.
+     * Scope to limit results and prevent resource exhaustion
+     */
+    public function scopeLimited($query, int $limit = 100)
+    {
+        return $query->limit($limit);
+    }
+
+    /**
+     * Scope for safe pagination
+     */
+    public function scopeSafePaginated($query, int $perPage = 15)
+    {
+        // Enforce maximum page size
+        $perPage = min($perPage, 100);
+        return $query->paginate($perPage);
+    }
+
+    /**
+     * Scope to get only verified players
+     */
+    public function scopeVerified($query)
+    {
+        return $query->where('is_verified', true);
+    }
+
+    /**
+     * Scope for efficient sorting by score
+     */
+    public function scopeOrderByScore($query, string $direction = 'desc')
+    {
+        return $query->orderBy('total_score', $direction);
+    }
+
+    /**
+     * Scope to exclude sensitive information
+     */
+    public function scopePublic($query)
+    {
+        return $query->select([
+            'id', 'nickname', 'total_score', 'level', 
+            'experience_points', 'created_at'
+        ]);
+    }
+
+    /**
+     * Get the player's transactions with resource protection.
      */
     public function transactions(): HasMany
     {
@@ -108,19 +153,27 @@ class Player extends Model
     }
 
     /**
-     * Get the player's unread notifications.
+     * Get the player's unread notifications with limits.
      */
     public function unreadNotifications()
     {
-        return $this->notifications()->unread()->with('notification');
+        // Limit to prevent resource exhaustion
+        return $this->notifications()
+                   ->unread()
+                   ->with('notification')
+                   ->limit(100);
     }
 
     /**
-     * Get the player's read notifications.
+     * Get the player's read notifications with limits.
      */
     public function readNotifications()
     {
-        return $this->notifications()->read()->with('notification');
+        // Paginated to prevent large data loads
+        return $this->notifications()
+                   ->read()
+                   ->with('notification')
+                   ->latest('read_at');
     }
 
     /**
@@ -128,15 +181,22 @@ class Player extends Model
      */
     public function recentNotifications()
     {
-        return $this->notifications()->recent()->with('notification');
+        return $this->notifications()
+                   ->recent()
+                   ->with('notification')
+                   ->limit(50);
     }
 
     /**
-     * Get the count of unread notifications.
+     * Get the count of unread notifications - cached to prevent expensive counts.
      */
     public function unreadNotificationsCount(): int
     {
-        return $this->notifications()->unread()->count();
+        return \Cache::remember(
+            "player_{$this->id}_unread_count",
+            300, // 5 minutes
+            fn () => $this->notifications()->unread()->count()
+        );
     }
 
     /**

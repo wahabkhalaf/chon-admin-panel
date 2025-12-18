@@ -138,6 +138,35 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Query Performance Monitoring
+    |--------------------------------------------------------------------------
+    |
+    | Enable query monitoring and optimization features
+    |
+    */
+
+    'query_monitoring' => env('DB_QUERY_MONITORING', false),
+    'log_slow_queries' => env('DB_LOG_SLOW_QUERIES', false),
+    'slow_query_threshold' => env('DB_SLOW_QUERY_THRESHOLD', 1000), // milliseconds
+    'monitor_duplicate_queries' => env('DB_MONITOR_DUPLICATE_QUERIES', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Connection Pool Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configure connection pooling for better performance
+    |
+    */
+
+    'pool' => [
+        'min_connections' => env('DB_POOL_MIN', 2),
+        'max_connections' => env('DB_POOL_MAX', 10),
+        'idle_timeout' => env('DB_POOL_IDLE_TIMEOUT', 60), // seconds
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Redis Databases
     |--------------------------------------------------------------------------
     |

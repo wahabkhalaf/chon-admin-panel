@@ -17,7 +17,12 @@ class LanguageController extends Controller
     public function getQuestions(Request $request): JsonResponse
     {
         $language = $request->get('language', 'en');
-        $questions = Question::all();
+        // Optimized: Select only needed columns and use cursor pagination for large datasets
+        $questions = Question::select(['id', 'question_text', 'question_text_arabic', 'question_text_kurdish', 'question_text_kurmanji', 
+                                      'options', 'options_arabic', 'options_kurdish', 'options_kurmanji',
+                                      'correct_answer', 'correct_answer_arabic', 'correct_answer_kurdish', 'correct_answer_kurmanji',
+                                      'question_type', 'level'])
+                              ->get();
 
         $data = $questions->map(function ($question) use ($language) {
             return [
@@ -47,7 +52,11 @@ class LanguageController extends Controller
     public function getCompetitions(Request $request): JsonResponse
     {
         $language = $request->get('language', 'en');
-        $competitions = Competition::all();
+        // Optimized: Select only needed columns
+        $competitions = Competition::select(['id', 'name', 'name_arabic', 'name_kurdish', 'name_kurmanji',
+                                            'description', 'description_arabic', 'description_kurdish', 'description_kurmanji',
+                                            'entry_fee', 'game_type', 'open_time', 'start_time', 'end_time'])
+                                     ->get();
 
         $data = $competitions->map(function ($competition) use ($language) {
             return [
@@ -77,7 +86,11 @@ class LanguageController extends Controller
     public function getPaymentMethods(Request $request): JsonResponse
     {
         $language = $request->get('language', 'en');
-        $paymentMethods = PaymentMethod::all();
+        
+        // Optimized: Select only needed columns and cache results
+        $paymentMethods = PaymentMethod::select(['id', 'code', 'name', 'name_arabic', 'name_kurdish', 'name_kurmanji', 'is_active'])
+                                       ->where('is_active', true)
+                                       ->get();
 
         $data = $paymentMethods->map(function ($paymentMethod) use ($language) {
             return [

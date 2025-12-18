@@ -16,7 +16,19 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'cors' => \App\Http\Middleware\Cors::class,
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'query.monitor' => \App\Http\Middleware\QueryMonitoring::class,
         ]);
+        
+        // Add query monitoring to web and api groups in development
+        // Note: Using env() here as config() is not available yet during bootstrap
+        if (env('APP_DEBUG', false) || env('QUERY_MONITORING_ENABLED', false)) {
+            $middleware->web(append: [
+                \App\Http\Middleware\QueryMonitoring::class,
+            ]);
+            $middleware->api(append: [
+                \App\Http\Middleware\QueryMonitoring::class,
+            ]);
+        }
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

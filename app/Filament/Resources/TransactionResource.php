@@ -35,13 +35,19 @@ class TransactionResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('player_id')
                             ->label('Player')
-                            ->options(Player::all()->pluck('nickname', 'id'))
                             ->searchable()
+                            ->getSearchResultsUsing(fn (string $search) => Player::where('nickname', 'like', "%{$search}%")
+                                ->limit(50)
+                                ->pluck('nickname', 'id'))
+                            ->getOptionLabelUsing(fn ($value): ?string => Player::find($value)?->nickname)
                             ->required(),
                         Forms\Components\Select::make('competition_id')
                             ->label('Competition')
-                            ->options(Competition::all()->pluck('name', 'id'))
                             ->searchable()
+                            ->getSearchResultsUsing(fn (string $search) => Competition::where('name', 'like', "%{$search}%")
+                                ->limit(50)
+                                ->pluck('name', 'id'))
+                            ->getOptionLabelUsing(fn ($value): ?string => Competition::find($value)?->name)
                             ->required(),
                         Forms\Components\TextInput::make('amount')
                             ->required()
@@ -61,7 +67,8 @@ class TransactionResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('payment_method')
                             ->label('Payment Method')
-                            ->options(PaymentMethod::all()->pluck('name', 'code'))
+                            ->options(fn () => PaymentMethod::where('is_active', true)
+                                ->pluck('name', 'code'))
                             ->searchable()
                             ->nullable(),
                         Forms\Components\TextInput::make('payment_provider')
