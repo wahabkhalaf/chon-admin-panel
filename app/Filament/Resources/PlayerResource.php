@@ -64,6 +64,8 @@ class PlayerResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('joined_at', 'desc')
+            ->defaultPaginationPageOption(25)
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->searchable()

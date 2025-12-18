@@ -33,12 +33,15 @@ class QuestionsRelationManager extends RelationManager
                 Forms\Components\Select::make('question_id')
                     ->label('Question')
                     ->searchable()
-                    ->getSearchResultsUsing(fn (string $search) => Question::where('question_text', 'like', "%{$search}%")
-                        ->orWhere('question_text_arabic', 'like', "%{$search}%")
-                        ->orWhere('question_text_kurdish', 'like', "%{$search}%")
+                    ->getSearchResultsUsing(fn (string $search) => Question::select(['id', 'question_text'])
+                        ->where(function($query) use ($search) {
+                            $query->where('question_text', 'like', "%{$search}%")
+                                ->orWhere('question_text_arabic', 'like', "%{$search}%")
+                                ->orWhere('question_text_kurdish', 'like', "%{$search}%");
+                        })
                         ->limit(50)
                         ->pluck('question_text', 'id'))
-                    ->getOptionLabelUsing(fn ($value): ?string => Question::find($value)?->question_text)
+                    ->getOptionLabelUsing(fn ($value): ?string => Question::select(['id', 'question_text'])->find($value)?->question_text)
                     ->required(),
             ]);
     }

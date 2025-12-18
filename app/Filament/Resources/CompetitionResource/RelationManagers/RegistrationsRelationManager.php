@@ -82,6 +82,7 @@ class RegistrationsRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('id')
+            ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => $query->with(['player:id,nickname,whatsapp_number', 'transaction:id,reference_id']))
             ->columns([
                 Tables\Columns\TextColumn::make('player.nickname')
                     ->label('Player')

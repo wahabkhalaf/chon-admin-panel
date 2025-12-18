@@ -67,8 +67,13 @@ class TransactionResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('payment_method')
                             ->label('Payment Method')
-                            ->options(fn () => PaymentMethod::where('is_active', true)
-                                ->pluck('name', 'code'))
+                            ->options(fn () => \Illuminate\Support\Facades\Cache::remember(
+                                'payment_methods_active',
+                                now()->addHours(1),
+                                fn () => PaymentMethod::where('is_active', true)
+                                    ->select(['code', 'name'])
+                                    ->pluck('name', 'code')
+                            ))
                             ->searchable()
                             ->nullable(),
                         Forms\Components\TextInput::make('payment_provider')
@@ -107,6 +112,7 @@ class TransactionResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['player:id,nickname', 'competition:id,name']))
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->searchable()
@@ -162,7 +168,11 @@ class TransactionResource extends Resource
                     ->searchable(),
                 Tables\Filters\SelectFilter::make('payment_method')
                     ->label('Payment Method')
-                    ->options(fn() => PaymentMethod::pluck('name', 'code')->toArray())
+                    ->options(fn() => \Illuminate\Support\Facades\Cache::remember(
+                        'payment_methods_all',
+                        now()->addHours(1),
+                        fn () => PaymentMethod::select(['code', 'name'])->pluck('name', 'code')->toArray()
+                    ))
                     ->searchable(),
             ])
             ->actions([

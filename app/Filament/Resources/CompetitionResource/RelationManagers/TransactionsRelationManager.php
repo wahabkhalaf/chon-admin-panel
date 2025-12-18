@@ -64,6 +64,9 @@ class TransactionsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => 
+                $query->with(['player:id,nickname', 'paymentMethodModel:id,code,name'])
+            )
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->searchable()

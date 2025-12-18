@@ -201,6 +201,8 @@ class NotificationResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
+            ->defaultPaginationPageOption(25)
             ->headerActions([
                 Tables\Actions\Action::make('toggle_auto_notifications')
                     ->label(fn() => self::isAutoNotificationsEnabled() ? 'Disable Auto Notifications' : 'Enable Auto Notifications')
