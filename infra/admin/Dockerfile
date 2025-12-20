@@ -52,7 +52,8 @@ COPY infra/admin/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Copy entrypoint script
 COPY infra/admin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+COPY infra/admin/queue-worker-entrypoint.sh /usr/local/bin/queue-worker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/queue-worker-entrypoint.sh
 
 # Expose port
 EXPOSE 80
