@@ -27,4 +27,4 @@ chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 echo "✅ Queue worker starting..."
 
 # Run queue worker with all arguments passed to this script
-exec su-exec www-data php artisan queue:work "$@"
+exec php artisan queue:work "$@"
