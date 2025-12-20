@@ -24,7 +24,7 @@ class Advertising extends Model
     ];
 
     /**
-     * Get the image URL
+     * Get the image URL from DigitalOcean Spaces CDN
      */
     public function getImageUrlAttribute(): string
     {
@@ -37,60 +37,9 @@ class Advertising extends Model
             return $this->image;
         }
 
-        // Clean the image path - remove any duplicate 'advertisements/' prefix
-        $cleanImagePath = preg_replace('/^advertisements\//', '', $this->image);
-
-        // Determine the correct base URL based on environment
-        $baseUrl = $this->getBaseUrl();
-        return rtrim($baseUrl, '/') . '/storage/advertisements/' . $cleanImagePath;
-    }
-
-    /**
-     * Get the correct base URL for the current environment
-     */
-    private function getBaseUrl(): string
-    {
-        // Simple and fast environment detection
-        $host = request()->getHost();
-        
-        // Check if we're in production (chonapp.net)
-        if (str_contains($host, 'chonapp.net')) {
-            return 'http://chonapp.net';
-        }
-        
-        // Check if we're in local development
-        if (in_array($host, ['localhost', '127.0.0.1'])) {
-            return 'http://localhost';
-        }
-        
-        // For API calls or external access, default to production
-        if (request()->is('api/*')) {
-            return 'http://chonapp.net';
-        }
-        
-        // Fallback to production for any other case
-        return 'http://chonapp.net';
-    }
-
-    /**
-     * Force production URL (useful for API calls)
-     */
-    public function getProductionImageUrlAttribute(): string
-    {
-        if (!$this->image) {
-            return '';
-        }
-
-        // If image is already a full URL (external or absolute), return as is
-        if (filter_var($this->image, FILTER_VALIDATE_URL)) {
-            return $this->image;
-        }
-
-        // Clean the image path - remove any duplicate 'advertisements/' prefix
-        $cleanImagePath = preg_replace('/^advertisements\//', '', $this->image);
-        
-        // Use the CORS-enabled route instead of direct storage access
-        return 'http://chonapp.net/storage/advertisements/' . $cleanImagePath;
+        // Return CDN URL for DigitalOcean Spaces
+        $cdnEndpoint = config('filesystems.disks.spaces.url');
+        return rtrim($cdnEndpoint, '/') . '/' . ltrim($this->image, '/');
     }
 
     /**
@@ -99,21 +48,5 @@ class Advertising extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
-    }
-
-    /**
-     * Get admin image URL for Filament
-     */
-    public function getAdminImageUrlAttribute(): string
-    {
-        if (!$this->image) {
-            return '';
-        }
-
-        // Clean the image path - remove any duplicate 'advertisements/' prefix
-        $cleanImagePath = preg_replace('/^advertisements\//', '', $this->image);
-        
-        // Use the full server URL for admin panel
-        return 'http://chonapp.net/storage/advertisements/' . $cleanImagePath;
     }
 }

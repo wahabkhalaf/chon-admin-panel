@@ -44,7 +44,7 @@ class AdvertisingResource extends Resource
                             ->maxSize(26624) 
                             ->required()
                             ->helperText('Accepted formats: JPEG, JPG, PNG, GIF. Max size: 26MB. GIF animations will be preserved. Static images will be resized to 800x450.')
-                            ->disk('public')
+                            ->disk('spaces')
                             ->directory('advertisements'),
 
                         Forms\Components\Toggle::make('is_active')
@@ -72,10 +72,10 @@ class AdvertisingResource extends Resource
 
                 Tables\Columns\ImageColumn::make('image')
                     ->label('Image')
-                    ->disk('public')
+                    ->disk('spaces')
                     ->size(60)
                     ->circular()
-                    ->url(fn (Advertising $record): string => $record->admin_image_url),
+                    ->url(fn (Advertising $record): string => $record->image_url),
 
                 Tables\Columns\TextColumn::make('is_active')
                     ->label('Status')
