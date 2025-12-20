@@ -24,10 +24,6 @@ fi
 echo "📦 Discovering packages..."
 php artisan package:discover --ansi || echo "⚠️  Package discovery failed, continuing..."
 
-# Run migrations
-echo "🔄 Running database migrations..."
-php artisan migrate --force || echo "⚠️  Migration failed, continuing..."
-
 # Clear and cache config
 echo "⚙️  Optimizing application..."
 php artisan config:cache || echo "⚠️  Config cache failed"
