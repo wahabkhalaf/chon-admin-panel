@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\NotificationResource\Pages;
 
 use App\Filament\Resources\NotificationResource;
+use App\Jobs\CreatePlayerNotificationRecords;
 use App\Models\Notification;
 use App\Services\FcmNotificationService;
 use Filament\Notifications\Notification as FilamentNotification;
@@ -21,6 +22,9 @@ class CreateNotification extends CreateRecord
 
         if ($sendImmediately) {
             try {
+                // TEMPORARILY DISABLED - FCM sending commented out to avoid sending to production
+                // TODO: Re-enable when ready for production
+                /*
                 $fcmService = app(FcmNotificationService::class);
                 // Ensure all data is properly formatted for FCM
                 $notificationData = [
@@ -43,23 +47,30 @@ class CreateNotification extends CreateRecord
                         'data' => gettype($notificationData['data'])
                     ]
                 ]);
+                */
+                
                 $userIds = [];
                 if (!empty($data['user_ids'])) {
                     $userIds = collect(explode(',', (string) $data['user_ids']))
                         ->map(fn($id) => trim($id))
-                        ->filter()
+                        ->filter(fn($id) => is_numeric($id)) // Only keep numeric IDs
+                        ->map(fn($id) => (int) $id) // Convert to integers
                         ->values()
                         ->all();
                 }
 
+                // TEMPORARILY DISABLED - FCM sending
+                /*
                 // If we have specific user IDs, send to those users only
                 // If no user IDs, send as broadcast to all users
                 if (!empty($userIds)) {
                     \Log::info('Sending notification to specific users', ['user_ids' => $userIds]);
                     $result = $fcmService->sendNotificationToUsers($notificationData, $userIds);
+                    $data['target_user_ids'] = $userIds; // Store for later use
                 } else {
                     \Log::info('Sending broadcast notification to all users');
                     $result = $fcmService->sendBroadcastNotification($notificationData);
+                    $data['target_user_ids'] = null; // null means all users
                 }
                 $data['status'] = $result['success'] ? 'sent' : 'failed';
                 
@@ -97,15 +108,33 @@ class CreateNotification extends CreateRecord
                         ->danger()
                         ->send();
                 }
+                */
+                
+                // Simulate successful save (without actually sending FCM)
+                $data['target_user_ids'] = !empty($userIds) ? $userIds : null;
+                $data['status'] = 'sent';
+                $data['api_response'] = [
+                    'success' => true,
+                    'message' => 'Notification saved to database (FCM disabled)',
+                    'test_mode' => true
+                ];
+                $data['sent_at'] = now();
+                
+                FilamentNotification::make()
+                    ->title('Notification saved to database')
+                    ->body('FCM sending is temporarily disabled')
+                    ->success()
+                    ->send();
+                    
             } catch (\Exception $e) {
                 $data['status'] = 'failed';
                 $data['api_response'] = ['error' => $e->getMessage()];
-                \Log::error('Error sending notification', [
+                \Log::error('Error saving notification', [
                     'error' => $e->getMessage(),
                     'data' => $data
                 ]);
                 FilamentNotification::make()
-                    ->title('Error sending notification')
+                    ->title('Error saving notification')
                     ->body((string) $e->getMessage())
                     ->danger()
                     ->send();
@@ -113,8 +142,49 @@ class CreateNotification extends CreateRecord
         } else {
             $data['status'] = 'pending';
         }
+        //Store target user IDs before removing from data
+        $targetUserIds = $data['target_user_ids'] ?? null;
+        
+        // Remove fields that are not database columns
+        unset($data['user_ids'], $data['target_user_ids']);
 
-        return Notification::create($data);
+        try {
+            \Log::info('Creating notification record', [
+                'data_keys' => array_keys($data),
+                'data' => $data
+            ]);
+            
+            $notification = Notification::create($data);
+            
+            \Log::info('Notification created successfully', [
+                'id' => $notification->id
+            ]);
+            
+            // Create PlayerNotification records if notification was sent
+            if ($data['status'] === 'sent' && $sendImmediately) {
+                // Dispatch job to create player notifications in background
+                CreatePlayerNotificationRecords::dispatch($notification->id, $targetUserIds);
+                
+                FilamentNotification::make()
+                    ->title('Notification queued')
+                    ->body('Player notifications are being created in the background')
+                    ->info()
+                    ->send();
+            }
+            
+            \Log::info('Notification created successfully', [
+                'id' => $notification->id
+            ]);
+            
+            return $notification;
+        } catch (\Exception $e) {
+            \Log::error('Failed to create notification record', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'data' => $data
+            ]);
+            throw $e;
+        }
     }
 
     /**
@@ -234,5 +304,67 @@ class CreateNotification extends CreateRecord
         
         // Fallback for any other type
         return (string) $value;
+    }
+
+    /**
+     * Create PlayerNotification records for each player
+     */
+    private function createPlayerNotificationRecords(\App\Models\Notification $notification, ?array $targetUserIds): void
+    {
+        try {
+            \Log::info('Creating PlayerNotification records', [
+                'notification_id' => $notification->id,
+                'target_user_ids' => $targetUserIds
+            ]);
+
+            // Get players based on target
+            if ($targetUserIds !== null && !empty($targetUserIds)) {
+                // Specific users
+                $players = \App\Models\Player::whereIn('id', $targetUserIds)->get();
+            } else {
+                // All players
+                $players = \App\Models\Player::all();
+            }
+
+            $insertData = [];
+            $now = now();
+
+            foreach ($players as $player) {
+                $insertData[] = [
+                    'player_id' => $player->id,
+                    'notification_id' => $notification->id,
+                    'received_at' => $now,
+                    'read_at' => null,
+                    'delivery_data' => json_encode([
+                        'sent_via' => 'fcm',
+                        'sent_at' => $now->toISOString(),
+                    ]),
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            if (!empty($insertData)) {
+                // Bulk insert for performance
+                \DB::table('player_notifications')->insert($insertData);
+                
+                \Log::info('PlayerNotification records created', [
+                    'count' => count($insertData),
+                    'notification_id' => $notification->id
+                ]);
+
+                FilamentNotification::make()
+                    ->title('Notification saved')
+                    ->body(count($insertData) . ' players were notified')
+                    ->success()
+                    ->send();
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to create PlayerNotification records', [
+                'error' => $e->getMessage(),
+                'notification_id' => $notification->id
+            ]);
+        }
     }
 }
