@@ -145,6 +145,22 @@ class Player extends Model
     }
 
     /**
+     * Get the player's points balance.
+     */
+    public function pointsBalance(): HasOne
+    {
+        return $this->hasOne(PlayerPointsBalance::class);
+    }
+
+    /**
+     * Get the player's points transactions.
+     */
+    public function pointsTransactions(): HasMany
+    {
+        return $this->hasMany(PointsTransaction::class);
+    }
+
+    /**
      * Get the player's notifications.
      */
     public function notifications()

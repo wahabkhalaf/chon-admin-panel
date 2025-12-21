@@ -69,7 +69,7 @@ class CompetitionLeaderboardRelationManager extends RelationManager
                 // No bulk actions
             ])
             ->modifyQueryUsing(function (Builder $query) {
-                return $query->with(['player']);
+                return $query->with(['player', 'competition.prizeTiers']);
             });
     }
 }
