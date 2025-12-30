@@ -102,6 +102,10 @@ class CreateNotification extends CreateRecord
                         ->danger()
                         ->send();
                 }
+                    
+            } catch (\Exception $e) {
+                $data['status'] = 'failed';
+                $data['api_response'] = ['error' => $e->getMessage()];
                 \Log::error('Error saving notification', [
                     'error' => $e->getMessage(),
                     'data' => $data
