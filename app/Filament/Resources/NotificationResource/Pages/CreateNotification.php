@@ -22,9 +22,6 @@ class CreateNotification extends CreateRecord
 
         if ($sendImmediately) {
             try {
-                // TEMPORARILY DISABLED - FCM sending commented out to avoid sending to production
-                // TODO: Re-enable when ready for production
-                /*
                 $fcmService = app(FcmNotificationService::class);
                 // Ensure all data is properly formatted for FCM
                 $notificationData = [
@@ -47,7 +44,6 @@ class CreateNotification extends CreateRecord
                         'data' => gettype($notificationData['data'])
                     ]
                 ]);
-                */
                 
                 $userIds = [];
                 if (!empty($data['user_ids'])) {
@@ -59,8 +55,6 @@ class CreateNotification extends CreateRecord
                         ->all();
                 }
 
-                // TEMPORARILY DISABLED - FCM sending
-                /*
                 // If we have specific user IDs, send to those users only
                 // If no user IDs, send as broadcast to all users
                 if (!empty($userIds)) {
@@ -108,27 +102,6 @@ class CreateNotification extends CreateRecord
                         ->danger()
                         ->send();
                 }
-                */
-                
-                // Simulate successful save (without actually sending FCM)
-                $data['target_user_ids'] = !empty($userIds) ? $userIds : null;
-                $data['status'] = 'sent';
-                $data['api_response'] = [
-                    'success' => true,
-                    'message' => 'Notification saved to database (FCM disabled)',
-                    'test_mode' => true
-                ];
-                $data['sent_at'] = now();
-                
-                FilamentNotification::make()
-                    ->title('Notification saved to database')
-                    ->body('FCM sending is temporarily disabled')
-                    ->success()
-                    ->send();
-                    
-            } catch (\Exception $e) {
-                $data['status'] = 'failed';
-                $data['api_response'] = ['error' => $e->getMessage()];
                 \Log::error('Error saving notification', [
                     'error' => $e->getMessage(),
                     'data' => $data
