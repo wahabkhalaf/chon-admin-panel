@@ -53,11 +53,10 @@ class PlayerResource extends Resource
                     ->schema([
                         Forms\Components\DateTimePicker::make('joined_at')
                             ->required()
-                            ->default(now()),
-                        Forms\Components\DateTimePicker::make('updated_at')
-                            ->required()
-                            ->default(now()),
-                    ]),
+                            ->default(now())
+                            ->hiddenOn('edit'),
+                    ])
+                    ->hiddenOn('edit'),
             ]);
     }
 

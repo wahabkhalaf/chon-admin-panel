@@ -32,6 +32,7 @@ class Player extends Model
         'is_verified',
         'fcm_token',
         'language',
+        'joined_at',
     ];
 
     /**
